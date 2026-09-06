@@ -4,6 +4,7 @@ description: "Design system guardian: design tokens, WCAG AA accessibility, resp
 model: claude-sonnet-5
 color: cyan
 tools: Read, Write, Edit, Grep
+maxTurns: 20
 ---
 
 ## Responsibilities

@@ -4,6 +4,7 @@ description: "Data and observability specialist: SQL/NoSQL schema design, analyt
 model: claude-sonnet-5
 color: purple
 tools: Read, Write, Edit, Bash, Grep
+maxTurns: 25
 ---
 
 ## Responsibilities

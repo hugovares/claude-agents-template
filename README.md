@@ -103,6 +103,20 @@ Versioning follows a human-in-the-loop flow, enforced on two layers:
 
 In short: the agent shows you the diff, asks if it should commit/push/checkout, and only runs the command — with Claude Code's own prompt as the final check — once you say yes. If you'd rather it never even attempt these commands and you always run them yourself, change `ask` to `deny` for those three entries in `settings.json` and revert the "Versioning" rule in `CLAUDE.md`/`orchestrator-architect.md` back to fully manual.
 
+### Model per agent (cost vs. quality)
+
+All agents default to `claude-sonnet-5` except `solutions-architect`, which uses `claude-opus-5`. The reasoning: `solutions-architect` makes the highest-stakes calls in the suite (a missed architectural risk can slip through silently, since it only escalates to you when *it* judges the impact significant) and is invoked far less often than the tactical agents — so the extra cost applies to a small slice of total usage. `orchestrator-architect` runs on every single request, so bumping its model would multiply cost across all usage for a triage decision Sonnet already handles well; it stays on Sonnet by design, not by oversight.
+
+### Runaway loops and unverified claims
+
+Two failure modes worth guarding against explicitly: an agent grinding on a task without converging (burning tokens), and an agent asserting something is done/working without having actually checked.
+
+- **`maxTurns` per agent** (in each `.claude/agents/*.md`): caps how many turns a single sub-agent invocation can take. When it's hit, Claude Code returns the output marked as partial instead of erroring, and `orchestrator-architect` is instructed to resume it once with a focused ask — if it's still not done after that, it stops and tells you what's unfinished instead of presenting partial work as complete. Values are a starting point (30 for the implementation-heavy agents, 20-25 for analysis/review agents, 50 for the orchestrator itself, which coordinates everyone else) — tune them once you see real usage. Requires Claude Code v2.1.246+ for the partial-output marking.
+- **Capped rejection loop:** if `product-qa-reviewer` rejects a delivery twice on the same story without resolving it, `orchestrator-architect` stops retrying and escalates to you with a summary of what was tried — instead of cycling indefinitely.
+- **Evidence over assertion** (`CLAUDE.md` §6): no agent may report a test as passing, a build as working, or a migration as applied without having actually run the command and relaying its real output. `product-qa-reviewer` specifically re-runs the test suite itself rather than trusting another agent's summary.
+
+None of this is a hallucination *detector* — Claude Code doesn't have one. It's a combination of hard caps (`maxTurns`) and behavioral rules that make ungrounded claims and endless loops easier to catch before they reach your `git diff`.
+
 ## 📁 Repository Structure
 
 ```text

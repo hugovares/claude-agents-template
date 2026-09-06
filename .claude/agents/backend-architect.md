@@ -4,6 +4,7 @@ description: "Backend engineering specialist for Node.js/Python services: RESTfu
 model: claude-sonnet-5
 color: green
 tools: Read, Write, Edit, Bash, Grep
+maxTurns: 30
 ---
 
 ## Responsibilities

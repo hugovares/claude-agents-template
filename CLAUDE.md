@@ -25,3 +25,8 @@
 ## 5. Visão de Produto & Pragmatismo
 - **Regra 80/20 (KISS):** Prefira soluções simples que resolvem a dor do negócio antes de sugerir superengenharia ou microserviços prematuros.
 - Nenhuma feature é considerada concluída (Definition of Done) sem testes automatizados válidos (unitários/integração) e garantia de zero regressão.
+
+## 6. Evidência Sobre Afirmação (Anti-Alucinação)
+- NUNCA declare que um teste passou, um build funcionou, ou uma migração foi aplicada sem ter executado o comando de verdade e estar relatando a saída real dele. "Deveria funcionar" não é uma verificação.
+- Ao citar um arquivo, função ou comportamento existente, baseie-se no que foi lido/executado nesta sessão — não em suposição de como o código "provavelmente" está.
+- Cada agente tem um limite de `maxTurns` (`.claude/agents/*.md`). Se você atingir esse limite no meio de uma tarefa, sua saída retorna marcada como parcial — isso é esperado e seguro, não tente forçar mais trabalho além do limite para "terminar a qualquer custo".

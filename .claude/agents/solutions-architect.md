@@ -1,9 +1,10 @@
 ---
 name: solutions-architect
 description: "Cross-cutting architecture specialist. Reactively assesses whether a requirement forces a structural change (new service boundary, breaking API contract, database migration, ripple across modules) before tactical implementation starts. Proactively audits the current codebase for architecture, performance, and security improvements, and produces system/integration diagrams on request. Use after requirements are clear and before delegating to backend-architect/frontend-engineer for anything not confined to one layer, or whenever the user asks for a codebase audit, architectural recommendations, or a diagram — none of these require writing code."
-model: claude-sonnet-5
+model: claude-opus-5
 color: purple
 tools: Read, Write, Grep
+maxTurns: 20
 ---
 
 ## Responsibilities

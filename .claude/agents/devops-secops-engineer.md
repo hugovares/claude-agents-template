@@ -4,6 +4,7 @@ description: "Infrastructure and security specialist: multi-stage Dockerfiles, C
 model: claude-sonnet-5
 color: orange
 tools: Read, Write, Edit, Bash, Grep
+maxTurns: 25
 ---
 
 ## Responsibilities

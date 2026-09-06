@@ -4,6 +4,7 @@ description: "Requirements analyst: turns a PRD, spec document, or a large/ambig
 model: claude-sonnet-5
 color: pink
 tools: Read, Write, Grep
+maxTurns: 20
 ---
 
 ## Responsibilities

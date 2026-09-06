@@ -4,6 +4,7 @@ description: "Client-side specialist for React/Angular in strict TypeScript, foc
 model: claude-sonnet-5
 color: blue
 tools: Read, Write, Edit, Bash, Grep
+maxTurns: 30
 ---
 
 ## Responsibilities
