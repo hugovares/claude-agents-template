@@ -269,21 +269,46 @@ You don't need an attached image to ask for a visual change — a qualitative br
 
 `ui-ux-design-system` still goes first: it interprets the brief into concrete token changes (palette, type scale, spacing density) and writes a short rationale for why those changes read as "more executive," before `frontend-engineer` implements them.
 
-## 🔍 Diagnostics: Audits, Recommendations, and Diagrams
+## 🔍 Diagnostics: Audits, Recommendations, Diagrams, and Legacy Reviews
 
-Some requests aren't asking for a code change at all — they're asking for an assessment. The orchestrator's triage recognizes this and routes straight to `solutions-architect`, skipping `PLAN.md`, delegation, and the git diff entirely:
+Some requests aren't asking for a code change at all — they're asking for an assessment. The orchestrator's triage recognizes this and routes to whichever specialist(s) fit, skipping `PLAN.md`, delegation, and the git diff entirely. Nothing gets written or changed in any of the examples below — if you then say "go ahead and implement recommendation #2," *that* becomes a new request, which goes back through triage like any other.
+
+### Architecture, performance, and security recommendations
 
 ```
 @orchestrator-architect Based on the current codebase, what architectural
 improvements would you recommend for performance and security?
 ```
 
+`solutions-architect` reads the codebase against `CONTEXT.md` and returns a prioritized list of recommendations, each with rationale and a rough effort/risk estimate.
+
+### System diagram
+
 ```
 @orchestrator-architect Draw a diagram of the current system architecture
 and its integrations.
 ```
 
-`solutions-architect` reads the codebase against `CONTEXT.md` and returns a prioritized list of recommendations (with rationale and rough effort/risk) or a Mermaid diagram — whichever was asked for — directly to you. Nothing gets written or changed. If you then say "go ahead and implement recommendation #2," *that* becomes a new request, which goes back through triage like any other.
+`solutions-architect` returns a Mermaid diagram of modules/services, data stores, and external integrations — renders natively wherever the docs are viewed.
+
+### Test-quality audit (mutation testing)
+
+```
+@orchestrator-architect How good are our tests on the payment module,
+really — not just coverage, would they actually catch a bug?
+```
+
+`product-qa-reviewer` handles this one: high line coverage with weak assertions isn't the same as a test suite that catches broken behavior. It recommends or runs mutation testing (Stryker/mutmut/PIT, depending on the stack) and reports back which parts of the suite are actually effective.
+
+### Legacy codebase review
+
+```
+@orchestrator-architect I inherited this repo. Help me understand what it
+does, and suggest improvements for modernization, optimization, tests,
+and security.
+```
+
+This is the broadest diagnostic case, and it's the one most worth knowing about if you're adopting this template on an existing project: the [onboarding check](#onboarding-an-existing-codebase) drafts `CONTEXT.md` first (the "what does it do" part), then the diagnostic fans out to **three** specialists at once — `solutions-architect` (architecture/modernization/performance), `devops-secops-engineer` (dependency/infra security), and `product-qa-reviewer` (test coverage and quality) — and `orchestrator-architect` merges their findings into one organized report instead of handing you three disconnected ones.
 
 ## 🗂 Traceability
 
