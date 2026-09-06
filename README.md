@@ -133,3 +133,19 @@ Either way, the last step is always the same: **fill in `CONTEXT.md`** with the 
    Looks good, commit and push it.
    ```
    Claude Code will still show its own confirmation prompt for the `git commit`/`git push` command before running it — that's `.claude/settings.json` doing its job as the final check.
+
+## 🖼 Implementing a Screen from an Image, Figma, or Lovable
+
+Claude reads images natively, so a screenshot or an exported Figma frame works out of the box — no extra tooling required. Attach the image and mention the orchestrator:
+
+```
+@orchestrator-architect Here's the checkout screen layout (image attached).
+Implement it.
+```
+
+`orchestrator-architect` calls `ui-ux-design-system` **first**: it reads the image and writes a spec (component breakdown, spacing/color mapped to design tokens, and the Loading/Error/Empty/Success states expected for each component) before `frontend-engineer` implements it. This keeps a design handoff from skipping straight to code without going through token discipline and accessibility review.
+
+What to attach depends on the source:
+- **Screenshot / exported PNG or SVG:** attach directly, works as-is.
+- **Figma:** export the frame as PNG/SVG and attach it. For higher-fidelity handoff (exact spacing and token values instead of a flat image), consider connecting [Figma's Dev Mode MCP server](https://www.figma.com/developers) so `ui-ux-design-system` can query structured design data instead of just reading a picture of it — not set up in this template, but a natural next step if you use Figma regularly.
+- **Lovable:** if you're sharing a preview/screenshot, treat it like any other image. If you're sharing exported code (Lovable generates React + Tailwind), there's nothing special to do — `frontend-engineer` and `ui-ux-design-system` read code directly with the `Read` tool.

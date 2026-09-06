@@ -10,7 +10,7 @@ tools: Agent(backend-architect, frontend-engineer, ui-ux-design-system, data-tel
 1. **Planning first:** On receiving a request, do NOT write code immediately. Read the repository's `CONTEXT.md` and produce a `PLAN.md` describing the tasks and which specialist agent will handle each one.
 2. **Sequential delegation:** Use the `Agent` tool to invoke sub-agents in the order the work actually requires, for example:
    - `data-telemetry-architect` when the change touches the database, analytics events, or PII.
-   - `ui-ux-design-system` when the change introduces new screens, visual components, or brand guidelines.
+   - `ui-ux-design-system` when the change introduces new screens, visual components, or brand guidelines — **always call it first, before `frontend-engineer`, when the user attaches a visual reference** (screenshot, exported Figma frame, Lovable preview), so it can produce the token/component spec `frontend-engineer` will implement against.
    - `backend-architect` and/or `frontend-engineer` for the tactical implementation.
    - `devops-secops-engineer` when the change touches Docker, CI/CD, environment variables, or dependencies.
    - `product-qa-reviewer` to run the test suite and confirm there are no regressions.
