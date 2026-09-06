@@ -24,11 +24,14 @@ The suite follows a **Coordinator/Orchestrator pattern**. Every request first go
          (significant impact found? --> stop, ask for human approval)
      --> pick a story, go to Step 2 below.
 
-  C) Diagnostic — audit, architectural/security/performance
-     recommendations, or a system diagram (no code change asked for)
-     --> [ solutions-architect ] (+ devops-secops-engineer for infra/security)
-     --> report or diagram returned to the user. Flow ends here:
-         no PLAN.md, no delegation, no git diff.
+  C) Diagnostic — audit, architectural/security/performance/test-quality
+     recommendations, a system diagram, or a legacy-codebase review
+     (no code change asked for)
+     --> [ solutions-architect ]      architecture/performance/modernization
+     --> [ devops-secops-engineer ]   infra/dependency security (if relevant)
+     --> [ product-qa-reviewer ]      test coverage/quality (if relevant)
+     --> one combined report or diagram returned to the user. Flow ends
+         here: no PLAN.md, no delegation, no git diff.
 ```
 
 **Step 2 — Implementation** (only reached from paths A or B above):
@@ -65,8 +68,8 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 | `frontend-engineer` | 🔵 blue | React/Angular in strict TypeScript, Core Web Vitals, resilient UI states. |
 | `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors; translates a visual reference or a qualitative style brief into an implementable spec. |
 | `data-telemetry-architect` | 🟣 purple | SQL/NoSQL schema design, JSON structured logging, alerting thresholds, LGPD/GDPR compliance. |
-| `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, CI/CD pipelines, quality-gate setup (hooks/CI), release/rollback/feature-flag strategy, secrets management, dependency scanning. |
-| `product-qa-reviewer` | 🟡 yellow | Test suite execution, anti-over-engineering, Definition of Done. |
+| `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, compatibility with the project's existing CI/CD (doesn't create one), local quality-gate hook, release/rollback/feature-flag strategy, secrets management, dependency scanning. |
+| `product-qa-reviewer` | 🟡 yellow | Test suite execution, test-quality audits (incl. mutation testing), anti-over-engineering, Definition of Done. |
 
 Each file's `description` field is written so Claude Code can also route work to the right specialist automatically, even without going through the orchestrator — see each agent's `.md` file for its full responsibilities and rules.
 
@@ -83,6 +86,8 @@ Each file's `description` field is written so Claude Code can also route work to
 | System diagram | Diagnostic (read-only) | "Draw the current system architecture." |
 | Onboarding into an existing codebase | Onboarding check (before triage) | "Let's start using this on the existing app." |
 | Opening a PR after a push | Direct/Analysis, versioning step | (asked separately, after you approve the push) |
+| Legacy codebase review (understand + modernize/optimize/test/security) | Onboarding, then Diagnostic (multi-specialist) | "I inherited this repo — what should we improve?" |
+| Test-quality audit (is test coverage actually meaningful?) | Diagnostic (read-only) | "How good are our tests on the payment module, really?" |
 
 This table is a summary of [`SCENARIOS.md`](SCENARIOS.md), the canonical checklist of behaviors the agent suite must keep covering. It's a **manual regression checklist**, not automated tests — this repo has no application code of its own, so a scenario here only verifies *routing* (which agents get called, in what order), not implementation quality.
 
@@ -123,15 +128,13 @@ Two failure modes worth guarding against explicitly: an agent grinding on a task
 
 None of this is a hallucination *detector* — Claude Code doesn't have one. It's a combination of hard caps (`maxTurns`) and behavioral rules that make ungrounded claims and endless loops easier to catch before they reach your `git diff`.
 
-### Mechanical quality gates (opt-in, asked once)
+### Mechanical quality gate — local only (opt-in, asked once)
 
 Everything above is either a hard cap on turns or a behavioral rule — an agent is *instructed* to show evidence, but nothing stops it from being wrong in good faith. [Claude Code hooks](https://code.claude.com/docs/en/hooks) close that gap: a hook runs in Claude Code's own runtime, not the model's judgment, and can genuinely block a tool call.
 
-This template ships (but doesn't activate) two mechanisms for that:
-- **`.claude/hooks/pre-commit-check.sh`** — a `PreToolUse` hook that runs before `git commit`, executes `.claude/hooks/run-tests.sh` (auto-detects `npm test`/`pytest`/`go test`, or hardcode your own command in it), and blocks the commit (exit code 2 — Claude cannot talk its way past this) if tests fail. If no test setup is found yet, it passes through rather than blocking everything on a fresh project.
-- **`.claude/ci-workflow.yml.template`** — a starting-point GitHub Actions workflow (lint/test/build), meant to be copied to `.github/workflows/ci.yml`.
+**This template deliberately does not create a CI/CD pipeline.** That's assumed to already exist (or be someone else's job to set up) — scaffolding one wasn't something we wanted this template responsible for. What it does ship (but doesn't activate) is a local convenience: **`.claude/hooks/pre-commit-check.sh`** — a `PreToolUse` hook that runs before `git commit`, executes `.claude/hooks/run-tests.sh` (auto-detects `npm test`/`pytest`/`go test`, or hardcode your own command in it), and blocks the commit (exit code 2 — Claude cannot talk its way past this) if tests fail. If no test setup is found yet, it passes through rather than blocking everything on a fresh project.
 
-Neither is wired up by default. `devops-secops-engineer` asks about this **once** — the first time it's relevant — and records the answer in `CONTEXT.md` §6 so it's never asked again. Saying validation is already handled externally to the repo is a completely valid answer; the agent won't push back or re-ask later.
+It's not wired up by default, and it's not a substitute for real CI — it just stops this agent's own commits from skipping tests it could have run. `devops-secops-engineer` asks about enabling it **once** — the first time it's relevant — and records the answer (plus where the project's real CI pipeline lives) in `CONTEXT.md` §6, so it's never asked again. Saying validation is already handled externally is a completely valid answer; the agent won't push back or re-ask later.
 
 ### Release, rollback, and alerting
 
@@ -157,9 +160,8 @@ claude-agents-template/
 │   │   ├── devops-secops-engineer.md
 │   │   └── product-qa-reviewer.md
 │   ├── hooks/
-│   │   ├── pre-commit-check.sh           # PreToolUse hook: blocks git commit if tests fail (opt-in)
+│   │   ├── pre-commit-check.sh           # PreToolUse hook: blocks git commit if tests fail (opt-in, local only)
 │   │   └── run-tests.sh                  # Test-runner the hook calls; auto-detects npm/pytest/go
-│   ├── ci-workflow.yml.template          # Starting-point GitHub Actions workflow (opt-in)
 │   └── settings.json                    # Permission rules (git/gh commands require confirmation)
 ├── scripts/
 │   └── install.sh                       # One-time copy of this template into another project
@@ -202,7 +204,7 @@ git clone https://github.com/your-org/claude-agents-template.git
 ./claude-agents-template/scripts/install.sh /path/to/my-new-project
 ```
 
-This copies `.claude/agents/`, `.claude/hooks/`, `.claude/ci-workflow.yml.template`, `.claude/settings.json`, and `CLAUDE.md` into the target project, and creates `CONTEXT.md` from the template only if one doesn't already exist there. The hooks/CI files are inert until `devops-secops-engineer` wires them up — see [Mechanical quality gates](#mechanical-quality-gates-opt-in-asked-once).
+This copies `.claude/agents/`, `.claude/hooks/`, `.claude/settings.json`, and `CLAUDE.md` into the target project, and creates `CONTEXT.md` from the template only if one doesn't already exist there. The local hook is inert until `devops-secops-engineer` wires it up — see [Mechanical quality gate](#mechanical-quality-gate--local-only-opt-in-asked-once). This template doesn't scaffold a CI/CD pipeline — that's assumed to already exist in the project.
 
 Either way, the last step is always the same: **fill in `CONTEXT.md`** with the new project's actual stack, folder layout, and scripts — this is what `orchestrator-architect` reads before planning any work.
 

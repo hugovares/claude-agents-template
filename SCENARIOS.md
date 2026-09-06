@@ -81,6 +81,20 @@ Fix any mismatch before committing the prompt change.
 **Expected artifact:** code diff, a branch, a commit, a push — and a **separate** question ("want me to open a PR?") before any `gh pr create` runs.
 **Why it matters:** confirms approving a push is never silently treated as approving a PR too — they're gated independently, same as commit vs. push.
 
+### 10. Legacy codebase review
+**Prompt:** "@orchestrator-architect I inherited this repo. Help me understand what it does, and suggest improvements for modernization, optimization, tests, and security."
+**Expected path:** Onboarding check (step 0) first, then C — diagnostic (read-only), fanning out to more than one specialist.
+**Expected agents:** `solutions-architect` drafts `CONTEXT.md` (the "what does it do" part), then `solutions-architect` (architecture/modernization/performance), `devops-secops-engineer` (dependency/infra security), and `product-qa-reviewer` (test coverage and quality, including whether mutation testing would reveal weak tests) each contribute to one combined report.
+**Expected artifact:** `CONTEXT.md`, then a single organized report (not three disconnected ones). No `PLAN.md`, no diff, no commit — this is read-only until the user picks something to act on.
+**Why it matters:** confirms a broad "review this legacy repo" request triggers onboarding *and* a multi-specialist diagnostic, instead of being handled by a single agent guessing at the full scope alone.
+
+### 11. Test-quality audit via mutation testing
+**Prompt:** "@orchestrator-architect how good are our tests on the payment module, really? Not just coverage — would they catch a real bug?"
+**Expected path:** C — diagnostic (read-only).
+**Expected agents:** `product-qa-reviewer`.
+**Expected artifact:** an assessment of test-suite quality (recommending/running mutation testing where relevant), returned as a report. No `PLAN.md`, no diff, no commit.
+**Why it matters:** confirms "do we have tests" and "are our tests actually good" are recognized as different questions — high coverage with weak assertions shouldn't read as a pass.
+
 ---
 
 *This file is the source of truth for "what the agents must be able to handle." The README's summary table is derived from it — update this file first, then reflect changes in the README.*

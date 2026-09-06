@@ -26,7 +26,9 @@
 
 ## 5. Visão de Produto & Pragmatismo
 - **Regra 80/20 (KISS):** Prefira soluções simples que resolvem a dor do negócio antes de sugerir superengenharia ou microserviços prematuros.
-- Nenhuma feature é considerada concluída (Definition of Done) sem testes automatizados válidos (unitários/integração) e garantia de zero regressão.
+- Nenhuma feature é considerada concluída (Definition of Done) sem testes automatizados válidos (unitários, integração e, quando a jornada for crítica, E2E) e garantia de zero regressão.
+- Para lógica de negócio crítica (pagamentos, permissões, cálculos financeiros), a suíte de testes deve ser boa o suficiente pra ser validada por teste de mutação, não só ter cobertura de linha — cobertura alta com testes fracos passa despercebida sem isso.
+- Este template não cria nem gerencia pipeline de CI/CD — assume que uma já existe (ou deveria existir) no projeto. O papel dos agentes é garantir que o código novo passa nos testes localmente e é compatível com o que a pipeline já valida, não substituí-la.
 
 ## 6. Evidência Sobre Afirmação (Anti-Alucinação)
 - NUNCA declare que um teste passou, um build funcionou, ou uma migração foi aplicada sem ter executado o comando de verdade e estar relatando a saída real dele. "Deveria funcionar" não é uma verificação.

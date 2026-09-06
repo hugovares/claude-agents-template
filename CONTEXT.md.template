@@ -32,11 +32,10 @@ src/
 - **Executar Testes:** `npm run test`
 - **Executar Linter:** `npm run lint`
 
-## 6. CI/CD & Quality Gates
-> Preenchido automaticamente por `devops-secops-engineer` na primeira vez que isso for relevante — pergunta uma única vez e nunca mais.
-- **Hook local de pré-commit (bloqueia commit se os testes falharem):** [Não configurado ainda]
-- **Workflow de CI (`.github/workflows/ci.yml`):** [Não configurado ainda]
-- **Validação já é feita externamente a este repositório?** [Não respondido ainda — se sim, descreva onde/como, e os itens acima ficam deliberadamente desativados]
+## 6. Quality Gates
+> Preenchido automaticamente por `devops-secops-engineer` na primeira vez que isso for relevante — pergunta uma única vez e nunca mais. Este template não cria pipeline de CI/CD — assume que uma já existe (ou deveria existir) fora daqui.
+- **Onde vive o pipeline de CI/CD real deste projeto:** [Não registrado ainda — Ex: GitHub Actions em `.github/workflows/ci.yml`, Jenkins, ou "ainda não existe, é uma lacuna conhecida"]
+- **Hook local de pré-commit habilitado (`.claude/hooks/`, bloqueia commit se os testes falharem):** [Não configurado ainda — é uma conveniência local, não substitui o CI acima]
 
 ## 7. Estratégia de Release, Rollback e Feature Flags
 - **Estratégia de deploy:** [Ex: deploy direto na branch main / blue-green / canary]
