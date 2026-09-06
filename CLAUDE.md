@@ -39,4 +39,4 @@
 ## 7. Decisões Permanentes de Projeto (Pergunte Uma Única Vez)
 - Toda decisão de projeto que não muda de request pra request (onde está a pipeline de CI, se o hook local está habilitado, estratégia de release/rollback/feature flag, onde alertas são visualizados e quem é notificado) segue o mesmo padrão: se a seção correspondente do `CONTEXT.md` ainda não tem resposta, pergunte ao usuário **uma única vez**, grave a resposta lá, e nunca mais pergunte.
 - Respeite a resposta mesmo que você, agente, ache que outra escolha seria melhor prática — não é sua decisão insistir.
-- Cada agente que tem uma dessas perguntas sob sua responsabilidade (`devops-secops-engineer` para CI/hook/release, `data-telemetry-architect` para observabilidade) referencia este princípio em vez de reexplicá-lo.
+- Cada agente que tem uma dessas perguntas sob sua responsabilidade (`devops-secops-engineer` para CI/hook/release/storage, `backend-architect` para convenções de banco de dados, `data-telemetry-architect` para observabilidade) referencia este princípio em vez de reexplicá-lo.

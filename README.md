@@ -152,7 +152,7 @@ It's not wired up by default, and it's not a substitute for real CI — it just 
 
 ### Release, rollback, and alerting
 
-`devops-secops-engineer` also owns release/rollback/feature-flag strategy (`CONTEXT.md` §7), and `data-telemetry-architect` defines alert thresholds on top of the structured logs it already emits, not just the logs themselves (`CONTEXT.md` §8) — a log nobody is paged on doesn't catch an incident. Both follow the same "ask once, record the answer, never re-litigate" principle — stated once in [`CLAUDE.md`](CLAUDE.md) §7 so it isn't re-explained in every agent that uses it.
+`devops-secops-engineer` also owns release/rollback/feature-flag strategy (`CONTEXT.md` §7), and `data-telemetry-architect` defines alert thresholds on top of the structured logs it already emits, not just the logs themselves (`CONTEXT.md` §8) — a log nobody is paged on doesn't catch an incident. Both follow the same "ask once, record the answer, never re-litigate" principle — stated once in [`CLAUDE.md`](CLAUDE.md) §7 so it isn't re-explained in every agent that uses it. The same split applies to `CONTEXT.md` §4: `backend-architect` owns Database Rules (ID strategy, soft-delete), `devops-secops-engineer` owns Storage Rules — except when `codebase-cartographer` is onboarding an existing codebase, where it fills §4 in by describing what the code already does, since that's an observable fact rather than a decision to ask about.
 
 ### Onboarding an existing codebase
 

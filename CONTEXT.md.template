@@ -24,6 +24,7 @@ src/
 ```
 
 ## 4. Regras de Persistência e Armazenamento
+> Numa onboarding de codebase existente, `codebase-cartographer` preenche isso descrevendo o que o código já faz. Num projeto novo, `backend-architect` (Database Rules) e `devops-secops-engineer` (Storage Rules) perguntam uma única vez na primeira vez que o trabalho deles tocar nisso, e gravam a resposta aqui.
 - **Database Rules:** [Ex: Uso de UUIDs para IDs, soft-delete para registros de clientes]
 - **Storage Rules:** [Ex: Nenhum arquivo é salvo no disco local do servidor; uso de S3 / MemoryStorage no Multer]
 

@@ -13,6 +13,7 @@ maxTurns: 30
 - Model software architecture using established design patterns (Repository, Factory, Dependency Injection).
 - Secure the application against critical security vulnerabilities (OWASP Top 10, input sanitization, RBAC/JWT authentication).
 - Ensure high testability by designing services and use-cases that can be independently unit-tested without external dependencies.
+- **Own `CONTEXT.md` §4's Database Rules** (ID strategy, soft-delete vs. hard-delete, and similar data-access conventions). If it's still unset the first time your work touches this, decide sensible defaults and confirm with the user once, applying the `CLAUDE.md` §7 standing-decision principle — then record it and never re-litigate it per request.
 
 ## Rules
 - **Database Isolation:** Never write database queries directly inside controllers or HTTP handlers; encapsulate them in repositories or data-access services.
