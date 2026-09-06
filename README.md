@@ -62,7 +62,7 @@ The suite follows a **Coordinator/Orchestrator pattern**. Every request first go
                       [devops-secops-engineer]   <-- executes branch/commit/push/PR
 ```
 
-`orchestrator-architect` is the one who asks about each versioning step, since it's the one talking to you — but it never runs `git commit`/`push`/`checkout`/`gh pr create` itself. Once you approve, it hands that specific action to `devops-secops-engineer` to actually execute.
+`orchestrator-architect` is the one who asks about each versioning step, since it's the one talking to you — but it never runs `git commit`/`push`/`checkout`/`gh pr create` itself. It drafts the commit message (or PR title/description) and shows it to you alongside the approval question; once you approve, it hands that specific action, and that exact wording, to `devops-secops-engineer` to actually execute — `devops-secops-engineer` doesn't compose its own.
 
 Only `orchestrator-architect` can invoke other sub-agents (it's the only one with the `Agent` tool, scoped to this exact list). Every other agent works within its own lane and reports back to it.
 
@@ -329,6 +329,6 @@ This is the broadest diagnostic case, and it's the one most worth knowing about 
 
 Three files carry the project's working memory, and they're deliberately not treated the same way:
 
-- **`BACKLOG.md`** (from `product-analyst`) is persistent — stories are marked done, never deleted, so it always reflects the full history of what was planned and delivered.
+- **`BACKLOG.md`** (from `product-analyst`) is persistent — `orchestrator-architect` marks a story `Done` directly once it's delivered, never deleted, so it always reflects the full history of what was planned and delivered.
 - **`ARCHITECTURE_IMPACT.md`** (from `solutions-architect`) is **append-only** — every assessment or audit adds a new dated section (`## YYYY-MM-DD — <title>`) instead of overwriting the last one. This is your architecture decision log: read it to see why a structural call was made, not just what the current state is.
 - **`PLAN.md`** (from `orchestrator-architect`) is ephemeral by design — it's a checklist for the task at hand, and gets overwritten by the next request. Its reasoning isn't lost, though: commit it alongside the code diff it produced, and `git log`/`git blame` on `PLAN.md` gives you that history too, tied to the actual commit that resulted from it.

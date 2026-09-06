@@ -38,8 +38,8 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Prompt:** "@orchestrator-architect here's the PRD for the referral program (file attached), let's start on this."
 **Expected path:** B — requirements analysis first.
 **Expected agents:** `product-analyst` → `solutions-architect` → (per selected story) the usual implementation agents.
-**Expected artifact:** `BACKLOG.md`, `ARCHITECTURE_IMPACT.md`, then `PLAN.md` per story.
-**Why it matters:** confirms a document-shaped or multi-feature request doesn't get treated as a single atomic task.
+**Expected artifact:** `BACKLOG.md`, `ARCHITECTURE_IMPACT.md`, then `PLAN.md` per story — and once `product-qa-reviewer` approves that story's delivery, `orchestrator-architect` marks it `Done` in `BACKLOG.md` itself before moving on.
+**Why it matters:** confirms a document-shaped or multi-feature request doesn't get treated as a single atomic task, and that `BACKLOG.md` actually gets updated on completion instead of staying frozen at "Not Started" forever.
 
 ### 4. Screen from an image/Figma/Lovable, with backend implications
 **Prompt:** "@orchestrator-architect here's the checkout screen layout (image attached), implement it including whatever's needed on the backend."
@@ -80,8 +80,8 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Prompt:** "@orchestrator-architect implement a new validation on the 'name' field," followed by approving the commit and push.
 **Expected path:** A, through to the versioning step.
 **Expected agents:** `backend-architect`/`frontend-engineer` for the change; `orchestrator-architect` asks for approval at each versioning step; `devops-secops-engineer` executes the branch/commit/push/PR once approved.
-**Expected artifact:** code diff, a branch, a commit, a push — and a **separate** question ("want me to open a PR?") before any `gh pr create` runs.
-**Why it matters:** confirms approving a push is never silently treated as approving a PR too (gated independently, same as commit vs. push), and that the orchestrator asks while `devops-secops-engineer` executes — never the same agent doing both without a human in between.
+**Expected artifact:** code diff, a branch, a commit (with a message `orchestrator-architect` drafted and showed before asking for approval), a push — and a **separate** question ("want me to open a PR?") before any `gh pr create` runs.
+**Why it matters:** confirms approving a push is never silently treated as approving a PR too (gated independently, same as commit vs. push), that the orchestrator asks while `devops-secops-engineer` executes — never the same agent doing both without a human in between — and that the commit message actually used is the one the human saw, not one `devops-secops-engineer` invented on its own.
 
 ### 10. Legacy codebase review
 **Prompt:** "@orchestrator-architect I inherited this repo. Help me understand what it does, and suggest improvements for modernization, optimization, tests, and security."

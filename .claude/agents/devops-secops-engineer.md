@@ -23,3 +23,4 @@ maxTurns: 30
 - **Deterministic Builds:** Lock dependency versions (`package-lock.json`, `poetry.lock`, `requirements.txt` with pins) so builds are reproducible.
 - **No pipeline scaffolding:** Never create or propose creating a new CI/CD pipeline config. If one doesn't exist yet, that's a gap for the human/their team to close outside this template — flag it, don't fill it.
 - **Only execute versioning commands when `orchestrator-architect` tells you the human already approved that specific action** (a branch, a commit, a push, or a PR) — you don't ask the human yourself and you don't infer approval from context.
+- **Use the commit message / PR title-description you were given, verbatim** — that's what the human already saw and approved. Don't compose your own wording for it.
