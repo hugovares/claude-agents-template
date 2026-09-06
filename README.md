@@ -73,13 +73,15 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 | `orchestrator-architect` | 🔴 red | Triages requests, breaks them into a `PLAN.md`, and delegates to the right specialists in sequence. |
 | `product-analyst` | 🩷 pink | Turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria. |
 | `solutions-architect` | 🟣 purple | Assesses structural/architectural impact before implementation; audits the codebase for architecture/performance/**application-level** security. Runs on `claude-opus-5` — the judgment-heavy half of what used to be one agent (see [Model per agent](#model-per-agent-cost-vs-quality)). |
-| `codebase-cartographer` | 🩵 cyan | Descriptive, mechanical codebase mapping: drafts `CONTEXT.md` when onboarding an existing codebase, and produces system diagrams. No judgment calls — that's `solutions-architect`. Runs on `claude-sonnet-5`. |
+| `codebase-cartographer` | 🟣 purple | Descriptive, mechanical codebase mapping: drafts `CONTEXT.md` when onboarding an existing codebase, and produces system diagrams. No judgment calls — that's `solutions-architect`, its architecture-adjacent sibling (same color, on purpose). Runs on `claude-sonnet-5`. |
 | `backend-architect` | 🟢 green | RESTful/GraphQL APIs, Clean Architecture, ACID transactions, OWASP security. |
 | `frontend-engineer` | 🔵 blue | React/Angular in strict TypeScript, Core Web Vitals, resilient UI states. |
 | `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors; translates a visual reference or a qualitative style brief into an implementable spec. |
-| `data-telemetry-architect` | 🟣 purple | SQL/NoSQL schema design, JSON structured logging, alerting thresholds, LGPD/GDPR compliance. |
+| `data-telemetry-architect` | 🟠 orange | SQL/NoSQL schema design, JSON structured logging, alerting thresholds, LGPD/GDPR compliance — infrastructure-adjacent, same color as `devops-secops-engineer`. |
 | `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, compatibility with the project's existing CI/CD (doesn't create one), local quality-gate hook, release/rollback/feature-flag strategy, **dependency/infra** security, and executing git/PR operations once approved. |
 | `product-qa-reviewer` | 🟡 yellow | Test suite execution, test-quality audits (incl. mutation testing), anti-over-engineering, Definition of Done. |
+
+There are 10 agents and only 8 supported colors, so two pairs share a color deliberately, grouped by functional proximity rather than arbitrarily: `solutions-architect`/`codebase-cartographer` (both architecture-adjacent — literally split from one original agent) share purple, and `devops-secops-engineer`/`data-telemetry-architect` (both infrastructure/operations, both hold a "CLAUDE.md §7 ask-once" standing decision) share orange. Every other agent keeps a unique color.
 
 Each file's `description` field is written so Claude Code can also route work to the right specialist automatically, even without going through the orchestrator — see each agent's `.md` file for its full responsibilities and rules.
 

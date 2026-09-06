@@ -16,6 +16,8 @@ and in what order. Flag any that don't match the "Expected path" column.
 
 Fix any mismatch before committing the prompt change.
 
+This dry-run checks *behavior*. It doesn't catch a purely structural mistake — a renamed agent that some other file still refers to by its old name, or `orchestrator-architect`'s `Agent()` allowlist drifting out of sync with the agents that actually exist. For that, run `./scripts/check-agent-refs.sh` — a boring, deterministic grep-based check, not an agent — alongside the dry-run whenever you rename, add, or remove an agent file.
+
 ## Scenarios
 
 ### 1. Simple, scoped change

@@ -2,7 +2,7 @@
 name: data-telemetry-architect
 description: "Data and observability specialist: SQL/NoSQL schema design, analytics event taxonomy, structured JSON logging with trace_id/span_id, alerting thresholds, and LGPD/GDPR compliance. Use when a task changes the database schema, adds an analytics event, introduces a new log-emitting code path, or needs someone to actually notice when it breaks in production."
 model: claude-sonnet-5
-color: purple
+color: orange
 tools: Read, Write, Edit, Bash, Grep
 maxTurns: 25
 ---
