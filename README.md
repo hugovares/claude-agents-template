@@ -8,26 +8,32 @@
 
 ## 🏛 Architecture
 
-The suite follows a **Coordinator/Orchestrator pattern**. Every request first goes through a triage step in `orchestrator-architect`: a well-scoped, single-layer ask goes straight to planning; anything ambiguous, multi-feature, or delivered as a PRD/spec document is routed through analysis first.
+The suite follows a **Coordinator/Orchestrator pattern**. Every request first goes through a triage step in `orchestrator-architect`, which sorts it into one of three paths: straight to implementation, through requirements/architecture analysis first, or — if it's not asking for a code change at all — a read-only diagnostic that never touches the codebase.
+
+**Step 1 — Triage** (`orchestrator-architect` reads the request and picks one path):
 
 ```text
-                          [ Developer ]
-                                │
-                                ▼
-                   [ orchestrator-architect ]  <-- triage
-                                │
-              ┌─────────────────┴─────────────────┐
-              ▼                                   ▼
-      (simple, scoped)                  (ambiguous / multi-feature / PRD)
-              │                                   │
-              │                          [ product-analyst ]  <-- BACKLOG.md
-              │                                   │
-              │                        [ solutions-architect ]  <-- ARCHITECTURE_IMPACT.md
-              │                                   │
-              │                     (significant impact? → human approval)
-              │                                   │
-              └─────────────────┬─────────────────┘
-                                 ▼
+[ Developer's request ] --> [ orchestrator-architect: triage ] --> one of:
+
+  A) Simple, scoped, clear acceptance criterion
+     --> go straight to Step 2 below.
+
+  B) Ambiguous, multi-feature, or a PRD/spec document
+     --> [ product-analyst ]        writes/updates BACKLOG.md
+     --> [ solutions-architect ]    writes ARCHITECTURE_IMPACT.md
+         (significant impact found? --> stop, ask for human approval)
+     --> pick a story, go to Step 2 below.
+
+  C) Diagnostic — audit, architectural/security/performance
+     recommendations, or a system diagram (no code change asked for)
+     --> [ solutions-architect ] (+ devops-secops-engineer for infra/security)
+     --> report or diagram returned to the user. Flow ends here:
+         no PLAN.md, no delegation, no git diff.
+```
+
+**Step 2 — Implementation** (only reached from paths A or B above):
+
+```text
                    [ orchestrator-architect ]  <-- writes PLAN.md, delegates via the Agent tool
                                  │
       ┌──────────────────────────┼──────────────────────────┬──────────────────────────┐
@@ -54,10 +60,10 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 |---|---|---|
 | `orchestrator-architect` | 🔴 red | Triages requests, breaks them into a `PLAN.md`, and delegates to the right specialists in sequence. |
 | `product-analyst` | 🩷 pink | Turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria. |
-| `solutions-architect` | 🟣 purple | Assesses whether a story forces a structural/architectural change before implementation starts. |
+| `solutions-architect` | 🟣 purple | Assesses structural/architectural impact before implementation; also audits the codebase and produces system diagrams on request. |
 | `backend-architect` | 🟢 green | RESTful/GraphQL APIs, Clean Architecture, ACID transactions, OWASP security. |
 | `frontend-engineer` | 🔵 blue | React/Angular in strict TypeScript, Core Web Vitals, resilient UI states. |
-| `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors. |
+| `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors; translates a visual reference or a qualitative style brief into an implementable spec. |
 | `data-telemetry-architect` | 🟣 purple | SQL/NoSQL schema design, JSON structured logging, LGPD/GDPR compliance. |
 | `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, CI/CD pipelines, secrets management, dependency scanning. |
 | `product-qa-reviewer` | 🟡 yellow | Test suite execution, anti-over-engineering, Definition of Done. |
@@ -183,3 +189,37 @@ What to attach depends on the source:
 - **Screenshot / exported PNG or SVG:** attach directly, works as-is.
 - **Figma:** export the frame as PNG/SVG and attach it. For higher-fidelity handoff (exact spacing and token values instead of a flat image), consider connecting [Figma's Dev Mode MCP server](https://www.figma.com/developers) so `ui-ux-design-system` can query structured design data instead of just reading a picture of it — not set up in this template, but a natural next step if you use Figma regularly.
 - **Lovable:** if you're sharing a preview/screenshot, treat it like any other image. If you're sharing exported code (Lovable generates React + Tailwind), there's nothing special to do — `frontend-engineer` and `ui-ux-design-system` read code directly with the `Read` tool.
+
+### No reference, just a style direction
+
+You don't need an attached image to ask for a visual change — a qualitative brief works too:
+
+```
+@orchestrator-architect Make screen "A" feel more executive.
+```
+
+`ui-ux-design-system` still goes first: it interprets the brief into concrete token changes (palette, type scale, spacing density) and writes a short rationale for why those changes read as "more executive," before `frontend-engineer` implements them.
+
+## 🔍 Diagnostics: Audits, Recommendations, and Diagrams
+
+Some requests aren't asking for a code change at all — they're asking for an assessment. The orchestrator's triage recognizes this and routes straight to `solutions-architect`, skipping `PLAN.md`, delegation, and the git diff entirely:
+
+```
+@orchestrator-architect Based on the current codebase, what architectural
+improvements would you recommend for performance and security?
+```
+
+```
+@orchestrator-architect Draw a diagram of the current system architecture
+and its integrations.
+```
+
+`solutions-architect` reads the codebase against `CONTEXT.md` and returns a prioritized list of recommendations (with rationale and rough effort/risk) or a Mermaid diagram — whichever was asked for — directly to you. Nothing gets written or changed. If you then say "go ahead and implement recommendation #2," *that* becomes a new request, which goes back through triage like any other.
+
+## 🗂 Traceability
+
+Three files carry the project's working memory, and they're deliberately not treated the same way:
+
+- **`BACKLOG.md`** (from `product-analyst`) is persistent — stories are marked done, never deleted, so it always reflects the full history of what was planned and delivered.
+- **`ARCHITECTURE_IMPACT.md`** (from `solutions-architect`) is **append-only** — every assessment or audit adds a new dated section (`## YYYY-MM-DD — <title>`) instead of overwriting the last one. This is your architecture decision log: read it to see why a structural call was made, not just what the current state is.
+- **`PLAN.md`** (from `orchestrator-architect`) is ephemeral by design — it's a checklist for the task at hand, and gets overwritten by the next request. Its reasoning isn't lost, though: commit it alongside the code diff it produced, and `git log`/`git blame` on `PLAN.md` gives you that history too, tied to the actual commit that resulted from it.
