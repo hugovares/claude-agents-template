@@ -31,3 +31,19 @@ src/
 - **Rodar a aplicação:** `npm run dev` ou `python main.py`
 - **Executar Testes:** `npm run test`
 - **Executar Linter:** `npm run lint`
+
+## 6. CI/CD & Quality Gates
+> Preenchido automaticamente por `devops-secops-engineer` na primeira vez que isso for relevante — pergunta uma única vez e nunca mais.
+- **Hook local de pré-commit (bloqueia commit se os testes falharem):** [Não configurado ainda]
+- **Workflow de CI (`.github/workflows/ci.yml`):** [Não configurado ainda]
+- **Validação já é feita externamente a este repositório?** [Não respondido ainda — se sim, descreva onde/como, e os itens acima ficam deliberadamente desativados]
+
+## 7. Estratégia de Release, Rollback e Feature Flags
+- **Estratégia de deploy:** [Ex: deploy direto na branch main / blue-green / canary]
+- **Como reverter um release problemático:** [Ex: `git revert` + redeploy / rollback automático do provedor / feature flag desligada]
+- **Feature flags:** [Ferramenta usada, se houver — Ex: LaunchDarkly, Unleash, flag simples via env var]
+
+## 8. Observabilidade: Alertas e SLOs
+- **Onde os logs/métricas são visualizados:** [Ex: Grafana, Datadog, CloudWatch]
+- **Alertas configurados:** [Ex: taxa de erro > 1% em 5min dispara alerta; latência p95 > 500ms]
+- **Quem é notificado:** [Ex: canal do Slack, PagerDuty]

@@ -67,6 +67,20 @@ Fix any mismatch before committing the prompt change.
 **Expected artifact:** a Mermaid diagram returned directly. No `PLAN.md`, no diff, no commit.
 **Why it matters:** confirms diagram requests are recognized as a distinct diagnostic output, not folded into a coding task.
 
+### 8. Onboarding this template into an existing codebase
+**Prompt:** "@orchestrator-architect let's start using this on the existing app." (no `CONTEXT.md` present, real code already exists)
+**Expected path:** Onboarding check (step 0), before triage.
+**Expected agents:** `solutions-architect` drafts `CONTEXT.md` by scanning the codebase.
+**Expected artifact:** `CONTEXT.md` (stack/structure/scripts filled in, product sections left as placeholders).
+**Why it matters:** confirms the orchestrator doesn't ask the human to hand-fill a blank template when the codebase can answer most of it, and doesn't skip straight to triage on a project it doesn't understand yet.
+
+### 9. Opening a PR after a push
+**Prompt:** "@orchestrator-architect implement a new validation on the 'name' field," followed by approving the commit and push.
+**Expected path:** A, through to the versioning step.
+**Expected agents:** `backend-architect`/`frontend-engineer`, then the orchestrator itself for git operations.
+**Expected artifact:** code diff, a branch, a commit, a push — and a **separate** question ("want me to open a PR?") before any `gh pr create` runs.
+**Why it matters:** confirms approving a push is never silently treated as approving a PR too — they're gated independently, same as commit vs. push.
+
 ---
 
 *This file is the source of truth for "what the agents must be able to handle." The README's summary table is derived from it — update this file first, then reflect changes in the README.*

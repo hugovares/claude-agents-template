@@ -15,8 +15,11 @@ echo "Installing claude-agents-template into $TARGET_DIR"
 
 mkdir -p "$TARGET_DIR/.claude"
 cp -R "$SCRIPT_DIR/.claude/agents" "$TARGET_DIR/.claude/"
+cp -R "$SCRIPT_DIR/.claude/hooks" "$TARGET_DIR/.claude/"
 cp "$SCRIPT_DIR/.claude/settings.json" "$TARGET_DIR/.claude/settings.json"
-echo "  - copied .claude/agents/ and .claude/settings.json"
+cp "$SCRIPT_DIR/.claude/ci-workflow.yml.template" "$TARGET_DIR/.claude/ci-workflow.yml.template"
+echo "  - copied .claude/agents/, .claude/hooks/, .claude/settings.json, .claude/ci-workflow.yml.template"
+echo "  - hooks/CI are inert until devops-secops-engineer wires them up (asks once, see CONTEXT.md §6)"
 
 cp "$SCRIPT_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"
 echo "  - copied CLAUDE.md"

@@ -60,12 +60,12 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 |---|---|---|
 | `orchestrator-architect` | 🔴 red | Triages requests, breaks them into a `PLAN.md`, and delegates to the right specialists in sequence. |
 | `product-analyst` | 🩷 pink | Turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria. |
-| `solutions-architect` | 🟣 purple | Assesses structural/architectural impact before implementation; also audits the codebase and produces system diagrams on request. |
+| `solutions-architect` | 🟣 purple | Assesses structural/architectural impact before implementation; audits the codebase, produces system diagrams, and drafts `CONTEXT.md` when onboarding an existing codebase. Runs on `claude-opus-5` (see [Model per agent](#model-per-agent-cost-vs-quality)). |
 | `backend-architect` | 🟢 green | RESTful/GraphQL APIs, Clean Architecture, ACID transactions, OWASP security. |
 | `frontend-engineer` | 🔵 blue | React/Angular in strict TypeScript, Core Web Vitals, resilient UI states. |
 | `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors; translates a visual reference or a qualitative style brief into an implementable spec. |
-| `data-telemetry-architect` | 🟣 purple | SQL/NoSQL schema design, JSON structured logging, LGPD/GDPR compliance. |
-| `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, CI/CD pipelines, secrets management, dependency scanning. |
+| `data-telemetry-architect` | 🟣 purple | SQL/NoSQL schema design, JSON structured logging, alerting thresholds, LGPD/GDPR compliance. |
+| `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, CI/CD pipelines, quality-gate setup (hooks/CI), release/rollback/feature-flag strategy, secrets management, dependency scanning. |
 | `product-qa-reviewer` | 🟡 yellow | Test suite execution, anti-over-engineering, Definition of Done. |
 
 Each file's `description` field is written so Claude Code can also route work to the right specialist automatically, even without going through the orchestrator — see each agent's `.md` file for its full responsibilities and rules.
@@ -81,6 +81,8 @@ Each file's `description` field is written so Claude Code can also route work to
 | Qualitative style change, no reference | Direct (design-first) | "Make screen 'A' feel more executive." |
 | Architecture/performance/security audit | Diagnostic (read-only) | "What architectural improvements would you recommend?" |
 | System diagram | Diagnostic (read-only) | "Draw the current system architecture." |
+| Onboarding into an existing codebase | Onboarding check (before triage) | "Let's start using this on the existing app." |
+| Opening a PR after a push | Direct/Analysis, versioning step | (asked separately, after you approve the push) |
 
 This table is a summary of [`SCENARIOS.md`](SCENARIOS.md), the canonical checklist of behaviors the agent suite must keep covering. It's a **manual regression checklist**, not automated tests — this repo has no application code of its own, so a scenario here only verifies *routing* (which agents get called, in what order), not implementation quality.
 
@@ -99,9 +101,13 @@ If a change adds a new capability worth remembering, add it as a new scenario th
 Versioning follows a human-in-the-loop flow, enforced on two layers:
 
 1. **Behavioral:** [`CLAUDE.md`](CLAUDE.md) instructs every agent to run `git diff`, present a summary, and explicitly ask you in the conversation before running `git commit`, `git push`, or `git checkout`. Any other infrastructure change stays off-limits autonomously either way — the agent asks you to run those yourself.
-2. **Hard (tool-level):** [`.claude/settings.json`](.claude/settings.json) sets `permissions.ask` on `git commit`, `git push`, and `git checkout` — even after you approve in chat, Claude Code shows its own native confirmation prompt before actually running the command. That prompt is the real safety net: it fires regardless of what an agent decides to do, so approval in conversation is never enough on its own.
+2. **Hard (tool-level):** [`.claude/settings.json`](.claude/settings.json) sets `permissions.ask` on `git commit`, `git push`, `git checkout`, `gh pr create`, `gh pr merge`, and `gh release create` — even after you approve in chat, Claude Code shows its own native confirmation prompt before actually running the command. That prompt is the real safety net: it fires regardless of what an agent decides to do, so approval in conversation is never enough on its own.
 
-In short: the agent shows you the diff, asks if it should commit/push/checkout, and only runs the command — with Claude Code's own prompt as the final check — once you say yes. If you'd rather it never even attempt these commands and you always run them yourself, change `ask` to `deny` for those three entries in `settings.json` and revert the "Versioning" rule in `CLAUDE.md`/`orchestrator-architect.md` back to fully manual.
+In short: the agent shows you the diff, asks if it should commit/push/checkout, and only runs the command — with Claude Code's own prompt as the final check — once you say yes. Opening a PR is asked **separately**, after the push, never bundled into the same yes. If you'd rather it never even attempt these commands and you always run them yourself, change `ask` to `deny` for the relevant entries in `settings.json` and revert the "Versioning" rule in `CLAUDE.md`/`orchestrator-architect.md` back to fully manual.
+
+### Branching and pull requests
+
+Before writing code, `orchestrator-architect` proposes a `feature/<slug>` or `fix/<slug>` branch instead of working directly on the current one — creating it goes through the same ask-then-execute flow as any other `git checkout`. After a push, it asks a **separate** question — "want me to open a PR?" — rather than assuming a yes to the push means yes to a PR too; `gh pr create` only runs after that's answered, and still hits Claude Code's own confirmation prompt on top.
 
 ### Model per agent (cost vs. quality)
 
@@ -116,6 +122,24 @@ Two failure modes worth guarding against explicitly: an agent grinding on a task
 - **Evidence over assertion** (`CLAUDE.md` §6): no agent may report a test as passing, a build as working, or a migration as applied without having actually run the command and relaying its real output. `product-qa-reviewer` specifically re-runs the test suite itself rather than trusting another agent's summary.
 
 None of this is a hallucination *detector* — Claude Code doesn't have one. It's a combination of hard caps (`maxTurns`) and behavioral rules that make ungrounded claims and endless loops easier to catch before they reach your `git diff`.
+
+### Mechanical quality gates (opt-in, asked once)
+
+Everything above is either a hard cap on turns or a behavioral rule — an agent is *instructed* to show evidence, but nothing stops it from being wrong in good faith. [Claude Code hooks](https://code.claude.com/docs/en/hooks) close that gap: a hook runs in Claude Code's own runtime, not the model's judgment, and can genuinely block a tool call.
+
+This template ships (but doesn't activate) two mechanisms for that:
+- **`.claude/hooks/pre-commit-check.sh`** — a `PreToolUse` hook that runs before `git commit`, executes `.claude/hooks/run-tests.sh` (auto-detects `npm test`/`pytest`/`go test`, or hardcode your own command in it), and blocks the commit (exit code 2 — Claude cannot talk its way past this) if tests fail. If no test setup is found yet, it passes through rather than blocking everything on a fresh project.
+- **`.claude/ci-workflow.yml.template`** — a starting-point GitHub Actions workflow (lint/test/build), meant to be copied to `.github/workflows/ci.yml`.
+
+Neither is wired up by default. `devops-secops-engineer` asks about this **once** — the first time it's relevant — and records the answer in `CONTEXT.md` §6 so it's never asked again. Saying validation is already handled externally to the repo is a completely valid answer; the agent won't push back or re-ask later.
+
+### Release, rollback, and alerting
+
+`devops-secops-engineer` also owns release/rollback/feature-flag strategy (`CONTEXT.md` §7), and `data-telemetry-architect` defines alert thresholds on top of the structured logs it already emits, not just the logs themselves (`CONTEXT.md` §8) — a log nobody is paged on doesn't catch an incident. Both ask once, the same way, and record the answer instead of re-litigating it per request.
+
+### Onboarding an existing codebase
+
+If you point this template at a project that already has code and no `CONTEXT.md`, `orchestrator-architect` notices before triaging anything and has `solutions-architect` scan the codebase to draft `CONTEXT.md` itself (stack, folder structure, scripts) — you fill in the product/business sections (§1), which can't be inferred from code.
 
 ## 📁 Repository Structure
 
@@ -132,7 +156,11 @@ claude-agents-template/
 │   │   ├── data-telemetry-architect.md
 │   │   ├── devops-secops-engineer.md
 │   │   └── product-qa-reviewer.md
-│   └── settings.json                    # Permission rules (git commit/push/checkout require confirmation)
+│   ├── hooks/
+│   │   ├── pre-commit-check.sh           # PreToolUse hook: blocks git commit if tests fail (opt-in)
+│   │   └── run-tests.sh                  # Test-runner the hook calls; auto-detects npm/pytest/go
+│   ├── ci-workflow.yml.template          # Starting-point GitHub Actions workflow (opt-in)
+│   └── settings.json                    # Permission rules (git/gh commands require confirmation)
 ├── scripts/
 │   └── install.sh                       # One-time copy of this template into another project
 ├── CLAUDE.md                            # Global engineering rules and guardrails
@@ -174,7 +202,7 @@ git clone https://github.com/your-org/claude-agents-template.git
 ./claude-agents-template/scripts/install.sh /path/to/my-new-project
 ```
 
-This copies `.claude/agents/`, `.claude/settings.json`, and `CLAUDE.md` into the target project, and creates `CONTEXT.md` from the template only if one doesn't already exist there.
+This copies `.claude/agents/`, `.claude/hooks/`, `.claude/ci-workflow.yml.template`, `.claude/settings.json`, and `CLAUDE.md` into the target project, and creates `CONTEXT.md` from the template only if one doesn't already exist there. The hooks/CI files are inert until `devops-secops-engineer` wires them up — see [Mechanical quality gates](#mechanical-quality-gates-opt-in-asked-once).
 
 Either way, the last step is always the same: **fill in `CONTEXT.md`** with the new project's actual stack, folder layout, and scripts — this is what `orchestrator-architect` reads before planning any work.
 

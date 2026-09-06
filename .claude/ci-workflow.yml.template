@@ -1,0 +1,26 @@
+# Starting-point CI workflow — copied to .github/workflows/ci.yml by
+# devops-secops-engineer only after the user opts in (see CONTEXT.md §6).
+# Adjust the steps below to match this project's actual stack (Node shown
+# as the default; swap for Python/Go/etc. per CONTEXT.md §2 and §5).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npm test
+      - run: npm run build --if-present
