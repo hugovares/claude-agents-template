@@ -8,28 +8,42 @@
 
 ## 🏛 Architecture
 
-The suite follows a **Coordinator/Orchestrator pattern**. A feature request is handed to `orchestrator-architect`, which writes a `PLAN.md` and delegates to the specialist sub-agents in the order the work actually requires:
+The suite follows a **Coordinator/Orchestrator pattern**. Every request first goes through a triage step in `orchestrator-architect`: a well-scoped, single-layer ask goes straight to planning; anything ambiguous, multi-feature, or delivered as a PRD/spec document is routed through analysis first.
 
 ```text
-                [ Developer ]
-                      │
-                      ▼
-           [ orchestrator-architect ]  <-- writes PLAN.md, delegates via the Agent tool
-                      │
-   ┌──────────────────┼──────────────────┬──────────────────┐
-   ▼                  ▼                  ▼                  ▼
-[backend-architect] [frontend-engineer] [ui-ux-design-system] [data-telemetry-architect]
-   │                  │                  │                  │
-   └──────────────────┴──────────────────┴──────────────────┘
-                      │
-                      ▼  (code + tests)
-           [devops-secops-engineer]   <-- validates Docker / CI
-                      │
-                      ▼
-            [product-qa-reviewer]     <-- runs the test suite
-                      │
-                      ▼
-             [ git diff on screen ]   <-- human approves before anything is committed
+                          [ Developer ]
+                                │
+                                ▼
+                   [ orchestrator-architect ]  <-- triage
+                                │
+              ┌─────────────────┴─────────────────┐
+              ▼                                   ▼
+      (simple, scoped)                  (ambiguous / multi-feature / PRD)
+              │                                   │
+              │                          [ product-analyst ]  <-- BACKLOG.md
+              │                                   │
+              │                        [ solutions-architect ]  <-- ARCHITECTURE_IMPACT.md
+              │                                   │
+              │                     (significant impact? → human approval)
+              │                                   │
+              └─────────────────┬─────────────────┘
+                                 ▼
+                   [ orchestrator-architect ]  <-- writes PLAN.md, delegates via the Agent tool
+                                 │
+      ┌──────────────────────────┼──────────────────────────┬──────────────────────────┐
+      ▼                          ▼                          ▼                          ▼
+[backend-architect]      [frontend-engineer]      [ui-ux-design-system]      [data-telemetry-architect]
+      │                          │                          │                          │
+      └──────────────────────────┴──────────────────────────┴──────────────────────────┘
+                                 │
+                                 ▼  (code + tests)
+                      [devops-secops-engineer]   <-- validates Docker / CI
+                                 │
+                                 ▼
+                       [product-qa-reviewer]     <-- runs the test suite
+                                 │
+                                 ▼
+                        [ git diff on screen ]   <-- human approves before anything is committed
 ```
 
 Only `orchestrator-architect` can invoke other sub-agents (it's the only one with the `Agent` tool, scoped to this exact list). Every other agent works within its own lane and reports back to it.
@@ -38,7 +52,9 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 
 | Agent | Color | Focus |
 |---|---|---|
-| `orchestrator-architect` | 🔴 red | Breaks a request into a `PLAN.md` and delegates to the right specialists in sequence. |
+| `orchestrator-architect` | 🔴 red | Triages requests, breaks them into a `PLAN.md`, and delegates to the right specialists in sequence. |
+| `product-analyst` | 🩷 pink | Turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria. |
+| `solutions-architect` | 🟣 purple | Assesses whether a story forces a structural/architectural change before implementation starts. |
 | `backend-architect` | 🟢 green | RESTful/GraphQL APIs, Clean Architecture, ACID transactions, OWASP security. |
 | `frontend-engineer` | 🔵 blue | React/Angular in strict TypeScript, Core Web Vitals, resilient UI states. |
 | `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors. |
@@ -63,7 +79,9 @@ In short: the agent shows you the diff, asks if it should commit/push/checkout, 
 claude-agents-template/
 ├── .claude/
 │   ├── agents/
-│   │   ├── orchestrator-architect.md    # Delegates to the other 6 via the Agent tool
+│   │   ├── orchestrator-architect.md    # Triages requests and delegates via the Agent tool
+│   │   ├── product-analyst.md           # PRD/requirements → BACKLOG.md
+│   │   ├── solutions-architect.md       # Architecture impact assessment → ARCHITECTURE_IMPACT.md
 │   │   ├── backend-architect.md
 │   │   ├── frontend-engineer.md
 │   │   ├── ui-ux-design-system.md
@@ -133,6 +151,22 @@ Either way, the last step is always the same: **fill in `CONTEXT.md`** with the 
    Looks good, commit and push it.
    ```
    Claude Code will still show its own confirmation prompt for the `git commit`/`git push` command before running it — that's `.claude/settings.json` doing its job as the final check.
+
+## 📋 Handling a PRD or a Large/Ambiguous Request
+
+Not every request should go straight to implementation. When you hand the orchestrator a PRD, a spec document, or a request that plausibly spans multiple features, it routes through analysis first instead of guessing:
+
+```
+@orchestrator-architect Here's the PRD for the referral program
+(prd-referral-program.pdf attached). Let's start on this.
+```
+
+1. `orchestrator-architect` triages the request. A PRD like this — multiple features, cross-cutting — triggers the analysis path instead of direct implementation.
+2. `product-analyst` reads the PRD and writes `BACKLOG.md`: epics broken into user stories, each with acceptance criteria, a rough size (S/M/L), a suggested priority, and any open questions the PRD left unanswered. It asks you to resolve those questions rather than guessing.
+3. For the story you pick to work on next, `solutions-architect` checks whether it forces a structural change (new service, breaking API, schema migration, cross-module ripple) and writes its finding to `ARCHITECTURE_IMPACT.md`. If the impact is significant, it stops and asks for your explicit approval before any code gets written; if it's negligible, it says so and the orchestrator proceeds directly.
+4. From there, it's the same flow as any other request: `PLAN.md`, delegation to the relevant specialists, `product-qa-reviewer`, and the diff for your approval.
+
+`BACKLOG.md` persists across sessions — each time you come back to work on the next story, `product-analyst` updates it rather than starting over. A short, clearly-scoped request (like the password reset example above) skips straight past `product-analyst`/`solutions-architect` — they only add value when there's real ambiguity or structural risk to catch.
 
 ## 🖼 Implementing a Screen from an Image, Figma, or Lovable
 
