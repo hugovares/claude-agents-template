@@ -70,6 +70,30 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 
 Each file's `description` field is written so Claude Code can also route work to the right specialist automatically, even without going through the orchestrator — see each agent's `.md` file for its full responsibilities and rules.
 
+## ✅ What the Agents Can Handle
+
+| Type of request | Path | Example |
+|---|---|---|
+| Simple, scoped change | Direct | "Implement a validation on the 'name' field." |
+| Multi-step feature, still clearly scoped | Direct | "Implement a password reset flow." |
+| PRD / multi-feature spec | Analysis | "Here's the PRD for the referral program." |
+| Screen from an image, Figma, or Lovable | Direct (design-first) | "Implement this screen (image attached)." |
+| Qualitative style change, no reference | Direct (design-first) | "Make screen 'A' feel more executive." |
+| Architecture/performance/security audit | Diagnostic (read-only) | "What architectural improvements would you recommend?" |
+| System diagram | Diagnostic (read-only) | "Draw the current system architecture." |
+
+This table is a summary of [`SCENARIOS.md`](SCENARIOS.md), the canonical checklist of behaviors the agent suite must keep covering. It's a **manual regression checklist**, not automated tests — this repo has no application code of its own, so a scenario here only verifies *routing* (which agents get called, in what order), not implementation quality.
+
+**Whenever you edit an agent's `description`/rules or the orchestrator's triage logic**, dry-run `SCENARIOS.md` before committing:
+
+```
+@orchestrator-architect Without actually doing the work, walk through
+SCENARIOS.md and tell me, for each scenario, which agents you'd invoke
+and in what order. Flag any that don't match the "Expected path" column.
+```
+
+If a change adds a new capability worth remembering, add it as a new scenario there first, then reflect it in the table above.
+
 ## 🛡 Guardrails
 
 Versioning follows a human-in-the-loop flow, enforced on two layers:
@@ -99,6 +123,7 @@ claude-agents-template/
 │   └── install.sh                       # One-time copy of this template into another project
 ├── CLAUDE.md                            # Global engineering rules and guardrails
 ├── CONTEXT.md.template                  # Per-project context template (stack, architecture, scripts)
+├── SCENARIOS.md                         # Manual regression checklist for agent routing
 └── README.md
 ```
 
