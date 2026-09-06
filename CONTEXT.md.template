@@ -35,7 +35,7 @@ src/
 ## 6. Quality Gates
 > Preenchido automaticamente por `devops-secops-engineer` na primeira vez que isso for relevante — pergunta uma única vez e nunca mais. Este template não cria pipeline de CI/CD — assume que uma já existe (ou deveria existir) fora daqui.
 - **Onde vive o pipeline de CI/CD real deste projeto:** [Não registrado ainda — Ex: GitHub Actions em `.github/workflows/ci.yml`, Jenkins, ou "ainda não existe, é uma lacuna conhecida"]
-- **Hook local de pré-commit habilitado (`.claude/hooks/`, bloqueia commit se os testes falharem):** [Não configurado ainda — é uma conveniência local, não substitui o CI acima]
+- **Hook local habilitado (`.claude/hooks/test-gate.sh`, bloqueia commit e push se os testes falharem):** [Não configurado ainda — é uma conveniência local, não substitui o CI acima]
 
 ## 7. Estratégia de Release, Rollback e Feature Flags
 - **Estratégia de deploy:** [Ex: deploy direto na branch main / blue-green / canary]

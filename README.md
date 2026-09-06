@@ -27,9 +27,13 @@ The suite follows a **Coordinator/Orchestrator pattern**. Every request first go
   C) Diagnostic — audit, architectural/security/performance/test-quality
      recommendations, a system diagram, or a legacy-codebase review
      (no code change asked for)
-     --> [ solutions-architect ]      architecture/performance/modernization
-     --> [ devops-secops-engineer ]   infra/dependency security (if relevant)
-     --> [ product-qa-reviewer ]      test coverage/quality (if relevant)
+     --> [ codebase-cartographer ]    a diagram, or CONTEXT.md for onboarding
+     --> [ solutions-architect ]      architecture/performance/app-security
+     --> [ devops-secops-engineer ]   infra/dependency security
+     --> [ product-qa-reviewer ]      test coverage/quality
+         (only the specialists the request actually needs get called —
+         an unqualified "security audit" always calls both
+         solutions-architect and devops-secops-engineer, not just one)
      --> one combined report or diagram returned to the user. Flow ends
          here: no PLAN.md, no delegation, no git diff.
 ```
@@ -52,8 +56,13 @@ The suite follows a **Coordinator/Orchestrator pattern**. Every request first go
                        [product-qa-reviewer]     <-- runs the test suite
                                  │
                                  ▼
-                        [ git diff on screen ]   <-- human approves before anything is committed
+                        [ git diff on screen ]   <-- human approves each versioning step
+                                 │
+                                 ▼
+                      [devops-secops-engineer]   <-- executes branch/commit/push/PR
 ```
+
+`orchestrator-architect` is the one who asks about each versioning step, since it's the one talking to you — but it never runs `git commit`/`push`/`checkout`/`gh pr create` itself. Once you approve, it hands that specific action to `devops-secops-engineer` to actually execute.
 
 Only `orchestrator-architect` can invoke other sub-agents (it's the only one with the `Agent` tool, scoped to this exact list). Every other agent works within its own lane and reports back to it.
 
@@ -63,12 +72,13 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 |---|---|---|
 | `orchestrator-architect` | 🔴 red | Triages requests, breaks them into a `PLAN.md`, and delegates to the right specialists in sequence. |
 | `product-analyst` | 🩷 pink | Turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria. |
-| `solutions-architect` | 🟣 purple | Assesses structural/architectural impact before implementation; audits the codebase, produces system diagrams, and drafts `CONTEXT.md` when onboarding an existing codebase. Runs on `claude-opus-5` (see [Model per agent](#model-per-agent-cost-vs-quality)). |
+| `solutions-architect` | 🟣 purple | Assesses structural/architectural impact before implementation; audits the codebase for architecture/performance/**application-level** security. Runs on `claude-opus-5` — the judgment-heavy half of what used to be one agent (see [Model per agent](#model-per-agent-cost-vs-quality)). |
+| `codebase-cartographer` | 🩵 cyan | Descriptive, mechanical codebase mapping: drafts `CONTEXT.md` when onboarding an existing codebase, and produces system diagrams. No judgment calls — that's `solutions-architect`. Runs on `claude-sonnet-5`. |
 | `backend-architect` | 🟢 green | RESTful/GraphQL APIs, Clean Architecture, ACID transactions, OWASP security. |
 | `frontend-engineer` | 🔵 blue | React/Angular in strict TypeScript, Core Web Vitals, resilient UI states. |
 | `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors; translates a visual reference or a qualitative style brief into an implementable spec. |
 | `data-telemetry-architect` | 🟣 purple | SQL/NoSQL schema design, JSON structured logging, alerting thresholds, LGPD/GDPR compliance. |
-| `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, compatibility with the project's existing CI/CD (doesn't create one), local quality-gate hook, release/rollback/feature-flag strategy, secrets management, dependency scanning. |
+| `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, compatibility with the project's existing CI/CD (doesn't create one), local quality-gate hook, release/rollback/feature-flag strategy, **dependency/infra** security, and executing git/PR operations once approved. |
 | `product-qa-reviewer` | 🟡 yellow | Test suite execution, test-quality audits (incl. mutation testing), anti-over-engineering, Definition of Done. |
 
 Each file's `description` field is written so Claude Code can also route work to the right specialist automatically, even without going through the orchestrator — see each agent's `.md` file for its full responsibilities and rules.
@@ -112,11 +122,13 @@ In short: the agent shows you the diff, asks if it should commit/push/checkout, 
 
 ### Branching and pull requests
 
-Before writing code, `orchestrator-architect` proposes a `feature/<slug>` or `fix/<slug>` branch instead of working directly on the current one — creating it goes through the same ask-then-execute flow as any other `git checkout`. After a push, it asks a **separate** question — "want me to open a PR?" — rather than assuming a yes to the push means yes to a PR too; `gh pr create` only runs after that's answered, and still hits Claude Code's own confirmation prompt on top.
+Before writing code, `orchestrator-architect` proposes a `feature/<slug>` or `fix/<slug>` branch instead of working directly on the current one. After a push, it asks a **separate** question — "want me to open a PR?" — rather than assuming a yes to the push means yes to a PR too. In both cases, and for every other versioning step, the pattern is the same: `orchestrator-architect` is the one who asks (it's the one you're talking to), and `devops-secops-engineer` is the one who actually runs the `git`/`gh` command once you say yes — never the same agent doing both without you in between. `gh pr create` still hits Claude Code's own confirmation prompt on top, regardless of which agent's Bash call triggered it.
 
 ### Model per agent (cost vs. quality)
 
 All agents default to `claude-sonnet-5` except `solutions-architect`, which uses `claude-opus-5`. The reasoning: `solutions-architect` makes the highest-stakes calls in the suite (a missed architectural risk can slip through silently, since it only escalates to you when *it* judges the impact significant) and is invoked far less often than the tactical agents — so the extra cost applies to a small slice of total usage. `orchestrator-architect` runs on every single request, so bumping its model would multiply cost across all usage for a triage decision Sonnet already handles well; it stays on Sonnet by design, not by oversight.
+
+`solutions-architect` used to also handle onboarding (`CONTEXT.md` drafting) and diagramming — both mechanical, descriptive tasks with no real judgment call, which don't justify Opus pricing. Those moved to a separate agent, `codebase-cartographer`, on `claude-sonnet-5`, precisely so the more expensive model is only paid for the work that actually needs it. A Claude Code subagent has exactly one `model:` per file, so splitting by cost/stakes was the only way to stop paying Opus rates for work that didn't need it — this is also why the two agents' security scopes are split (`solutions-architect` for application/architecture-level security, `devops-secops-engineer` for dependency/infra) rather than one agent owning "security" broadly.
 
 ### Runaway loops and unverified claims
 
@@ -132,17 +144,17 @@ None of this is a hallucination *detector* — Claude Code doesn't have one. It'
 
 Everything above is either a hard cap on turns or a behavioral rule — an agent is *instructed* to show evidence, but nothing stops it from being wrong in good faith. [Claude Code hooks](https://code.claude.com/docs/en/hooks) close that gap: a hook runs in Claude Code's own runtime, not the model's judgment, and can genuinely block a tool call.
 
-**This template deliberately does not create a CI/CD pipeline.** That's assumed to already exist (or be someone else's job to set up) — scaffolding one wasn't something we wanted this template responsible for. What it does ship (but doesn't activate) is a local convenience: **`.claude/hooks/pre-commit-check.sh`** — a `PreToolUse` hook that runs before `git commit`, executes `.claude/hooks/run-tests.sh` (auto-detects `npm test`/`pytest`/`go test`, or hardcode your own command in it), and blocks the commit (exit code 2 — Claude cannot talk its way past this) if tests fail. If no test setup is found yet, it passes through rather than blocking everything on a fresh project.
+**This template deliberately does not create a CI/CD pipeline.** That's assumed to already exist (or be someone else's job to set up) — scaffolding one wasn't something we wanted this template responsible for. What it does ship (but doesn't activate) is a local convenience: **`.claude/hooks/test-gate.sh`** — a `PreToolUse` hook wired to both `git commit` and `git push`, executing `.claude/hooks/run-tests.sh` (auto-detects `npm test`/`pytest`/`go test`, or hardcode your own command in it), and blocking the command (exit code 2 — Claude cannot talk its way past this) if tests fail. Gating both commit and push, not just commit, means a test failure gets caught even if the hook was only enabled partway through a session. If no test setup is found yet, it passes through rather than blocking everything on a fresh project.
 
 It's not wired up by default, and it's not a substitute for real CI — it just stops this agent's own commits from skipping tests it could have run. `devops-secops-engineer` asks about enabling it **once** — the first time it's relevant — and records the answer (plus where the project's real CI pipeline lives) in `CONTEXT.md` §6, so it's never asked again. Saying validation is already handled externally is a completely valid answer; the agent won't push back or re-ask later.
 
 ### Release, rollback, and alerting
 
-`devops-secops-engineer` also owns release/rollback/feature-flag strategy (`CONTEXT.md` §7), and `data-telemetry-architect` defines alert thresholds on top of the structured logs it already emits, not just the logs themselves (`CONTEXT.md` §8) — a log nobody is paged on doesn't catch an incident. Both ask once, the same way, and record the answer instead of re-litigating it per request.
+`devops-secops-engineer` also owns release/rollback/feature-flag strategy (`CONTEXT.md` §7), and `data-telemetry-architect` defines alert thresholds on top of the structured logs it already emits, not just the logs themselves (`CONTEXT.md` §8) — a log nobody is paged on doesn't catch an incident. Both follow the same "ask once, record the answer, never re-litigate" principle — stated once in [`CLAUDE.md`](CLAUDE.md) §7 so it isn't re-explained in every agent that uses it.
 
 ### Onboarding an existing codebase
 
-If you point this template at a project that already has code and no `CONTEXT.md`, `orchestrator-architect` notices before triaging anything and has `solutions-architect` scan the codebase to draft `CONTEXT.md` itself (stack, folder structure, scripts) — you fill in the product/business sections (§1), which can't be inferred from code.
+If you point this template at a project that already has code and no `CONTEXT.md`, `orchestrator-architect` notices before triaging anything and has `codebase-cartographer` scan the codebase to draft `CONTEXT.md` itself (stack, folder structure, scripts) — you fill in the product/business sections (§1), which can't be inferred from code. This is a descriptive task, not a judgment call, so it's handled by the cheaper of the two architecture-adjacent agents rather than `solutions-architect`.
 
 ## 📁 Repository Structure
 
@@ -153,14 +165,15 @@ claude-agents-template/
 │   │   ├── orchestrator-architect.md    # Triages requests and delegates via the Agent tool
 │   │   ├── product-analyst.md           # PRD/requirements → BACKLOG.md
 │   │   ├── solutions-architect.md       # Architecture impact assessment → ARCHITECTURE_IMPACT.md
+│   │   ├── codebase-cartographer.md     # Descriptive mapping: CONTEXT.md onboarding, diagrams
 │   │   ├── backend-architect.md
 │   │   ├── frontend-engineer.md
 │   │   ├── ui-ux-design-system.md
 │   │   ├── data-telemetry-architect.md
-│   │   ├── devops-secops-engineer.md
+│   │   ├── devops-secops-engineer.md    # Also executes git/PR commands once approved
 │   │   └── product-qa-reviewer.md
 │   ├── hooks/
-│   │   ├── pre-commit-check.sh           # PreToolUse hook: blocks git commit if tests fail (opt-in, local only)
+│   │   ├── test-gate.sh                  # PreToolUse hook: blocks git commit/push if tests fail (opt-in, local only)
 │   │   └── run-tests.sh                  # Test-runner the hook calls; auto-detects npm/pytest/go
 │   └── settings.json                    # Permission rules (git/gh commands require confirmation)
 ├── scripts/
@@ -280,7 +293,7 @@ Some requests aren't asking for a code change at all — they're asking for an a
 improvements would you recommend for performance and security?
 ```
 
-`solutions-architect` reads the codebase against `CONTEXT.md` and returns a prioritized list of recommendations, each with rationale and a rough effort/risk estimate.
+`solutions-architect` reads the codebase against `CONTEXT.md` and returns a prioritized list of recommendations, each with rationale and a rough effort/risk estimate. If the ask is a general, unqualified "security" review rather than something clearly architectural, `devops-secops-engineer` contributes its own (dependency/infra) findings too, merged into the same report — the two agents' security scopes are complementary, not overlapping, so an unqualified ask goes to both rather than picking one.
 
 ### System diagram
 
@@ -289,7 +302,7 @@ improvements would you recommend for performance and security?
 and its integrations.
 ```
 
-`solutions-architect` returns a Mermaid diagram of modules/services, data stores, and external integrations — renders natively wherever the docs are viewed.
+`codebase-cartographer` returns a Mermaid diagram of modules/services, data stores, and external integrations — renders natively wherever the docs are viewed. This is a descriptive task with no judgment call involved, so it's handled by the cheaper of the two architecture-adjacent agents rather than `solutions-architect`.
 
 ### Test-quality audit (mutation testing)
 
@@ -308,7 +321,7 @@ does, and suggest improvements for modernization, optimization, tests,
 and security.
 ```
 
-This is the broadest diagnostic case, and it's the one most worth knowing about if you're adopting this template on an existing project: the [onboarding check](#onboarding-an-existing-codebase) drafts `CONTEXT.md` first (the "what does it do" part), then the diagnostic fans out to **three** specialists at once — `solutions-architect` (architecture/modernization/performance), `devops-secops-engineer` (dependency/infra security), and `product-qa-reviewer` (test coverage and quality) — and `orchestrator-architect` merges their findings into one organized report instead of handing you three disconnected ones.
+This is the broadest diagnostic case, and it's the one most worth knowing about if you're adopting this template on an existing project: the [onboarding check](#onboarding-an-existing-codebase) has `codebase-cartographer` scan the codebase **once** and draft `CONTEXT.md` first (the "what does it do" part), then the diagnostic fans out to **three** specialists — `solutions-architect` (architecture/modernization/performance/app-security, reading that fresh `CONTEXT.md` as its starting map instead of re-exploring blind), `devops-secops-engineer` (dependency/infra security), and `product-qa-reviewer` (test coverage and quality) — and `orchestrator-architect` merges their findings into one organized report instead of handing you three disconnected ones. The codebase only gets scanned once, not once per agent that needs to understand it.
 
 ## 🗂 Traceability
 

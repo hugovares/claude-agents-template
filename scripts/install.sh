@@ -18,7 +18,7 @@ cp -R "$SCRIPT_DIR/.claude/agents" "$TARGET_DIR/.claude/"
 cp -R "$SCRIPT_DIR/.claude/hooks" "$TARGET_DIR/.claude/"
 cp "$SCRIPT_DIR/.claude/settings.json" "$TARGET_DIR/.claude/settings.json"
 echo "  - copied .claude/agents/, .claude/hooks/, .claude/settings.json"
-echo "  - the local pre-commit hook is inert until devops-secops-engineer wires it up (asks once, see CONTEXT.md §6)"
+echo "  - the local test-gate hook is inert until devops-secops-engineer wires it up (asks once, see CONTEXT.md §6)"
 echo "  - this template does not create a CI/CD pipeline — it assumes your project already has one"
 
 cp "$SCRIPT_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"

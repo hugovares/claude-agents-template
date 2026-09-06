@@ -56,37 +56,37 @@ Fix any mismatch before committing the prompt change.
 ### 6. Proactive architecture/performance/security audit
 **Prompt:** "@orchestrator-architect based on the current codebase, what architectural improvements would you recommend for performance and security?"
 **Expected path:** C — diagnostic (read-only).
-**Expected agents:** `solutions-architect` (+ `devops-secops-engineer` if it's infra/dependency-specific).
-**Expected artifact:** a prioritized recommendation report. No `PLAN.md`, no diff, no commit.
-**Why it matters:** confirms an analysis-only request doesn't get treated as an implicit instruction to start changing code.
+**Expected agents:** `solutions-architect` (application/architecture-level security) **and** `devops-secops-engineer` (dependency/infra security) — a general, unqualified "security" ask goes to both by default, merged into one report, since their scopes are complementary rather than overlapping.
+**Expected artifact:** a single prioritized recommendation report. No `PLAN.md`, no diff, no commit.
+**Why it matters:** confirms an analysis-only request doesn't get treated as an implicit instruction to start changing code, and that "security" doesn't get arbitrarily assigned to just one of the two agents that legitimately own a piece of it.
 
 ### 7. System diagram request
 **Prompt:** "@orchestrator-architect draw a diagram of the current system architecture and its integrations."
 **Expected path:** C — diagnostic (read-only).
-**Expected agents:** `solutions-architect`.
+**Expected agents:** `codebase-cartographer`.
 **Expected artifact:** a Mermaid diagram returned directly. No `PLAN.md`, no diff, no commit.
-**Why it matters:** confirms diagram requests are recognized as a distinct diagnostic output, not folded into a coding task.
+**Why it matters:** confirms diagram requests are recognized as a distinct diagnostic output, not folded into a coding task, and routed to the descriptive/mechanical specialist rather than the higher-cost judgment one.
 
 ### 8. Onboarding this template into an existing codebase
 **Prompt:** "@orchestrator-architect let's start using this on the existing app." (no `CONTEXT.md` present, real code already exists)
 **Expected path:** Onboarding check (step 0), before triage.
-**Expected agents:** `solutions-architect` drafts `CONTEXT.md` by scanning the codebase.
+**Expected agents:** `codebase-cartographer` drafts `CONTEXT.md` by scanning the codebase.
 **Expected artifact:** `CONTEXT.md` (stack/structure/scripts filled in, product sections left as placeholders).
-**Why it matters:** confirms the orchestrator doesn't ask the human to hand-fill a blank template when the codebase can answer most of it, and doesn't skip straight to triage on a project it doesn't understand yet.
+**Why it matters:** confirms the orchestrator doesn't ask the human to hand-fill a blank template when the codebase can answer most of it, doesn't skip straight to triage on a project it doesn't understand yet, and uses the cheaper descriptive specialist for a mechanical task rather than the Opus-tier judgment one.
 
 ### 9. Opening a PR after a push
 **Prompt:** "@orchestrator-architect implement a new validation on the 'name' field," followed by approving the commit and push.
 **Expected path:** A, through to the versioning step.
-**Expected agents:** `backend-architect`/`frontend-engineer`, then the orchestrator itself for git operations.
+**Expected agents:** `backend-architect`/`frontend-engineer` for the change; `orchestrator-architect` asks for approval at each versioning step; `devops-secops-engineer` executes the branch/commit/push/PR once approved.
 **Expected artifact:** code diff, a branch, a commit, a push — and a **separate** question ("want me to open a PR?") before any `gh pr create` runs.
-**Why it matters:** confirms approving a push is never silently treated as approving a PR too — they're gated independently, same as commit vs. push.
+**Why it matters:** confirms approving a push is never silently treated as approving a PR too (gated independently, same as commit vs. push), and that the orchestrator asks while `devops-secops-engineer` executes — never the same agent doing both without a human in between.
 
 ### 10. Legacy codebase review
 **Prompt:** "@orchestrator-architect I inherited this repo. Help me understand what it does, and suggest improvements for modernization, optimization, tests, and security."
 **Expected path:** Onboarding check (step 0) first, then C — diagnostic (read-only), fanning out to more than one specialist.
-**Expected agents:** `solutions-architect` drafts `CONTEXT.md` (the "what does it do" part), then `solutions-architect` (architecture/modernization/performance), `devops-secops-engineer` (dependency/infra security), and `product-qa-reviewer` (test coverage and quality, including whether mutation testing would reveal weak tests) each contribute to one combined report.
-**Expected artifact:** `CONTEXT.md`, then a single organized report (not three disconnected ones). No `PLAN.md`, no diff, no commit — this is read-only until the user picks something to act on.
-**Why it matters:** confirms a broad "review this legacy repo" request triggers onboarding *and* a multi-specialist diagnostic, instead of being handled by a single agent guessing at the full scope alone.
+**Expected agents:** `codebase-cartographer` drafts `CONTEXT.md` (the "what does it do" part, one codebase scan); then `solutions-architect` (architecture/modernization/performance/app-security — reusing that fresh `CONTEXT.md` instead of re-scanning blind), `devops-secops-engineer` (dependency/infra security), and `product-qa-reviewer` (test coverage and quality, including whether mutation testing would reveal weak tests) each contribute to one combined report.
+**Expected artifact:** `CONTEXT.md`, then a single organized report (not three or four disconnected ones). No `PLAN.md`, no diff, no commit — this is read-only until the user picks something to act on.
+**Why it matters:** confirms a broad "review this legacy repo" request triggers onboarding *and* a multi-specialist diagnostic, instead of being handled by a single agent guessing at the full scope alone — and that the codebase only gets scanned once, not twice, for the two different purposes.
 
 ### 11. Test-quality audit via mutation testing
 **Prompt:** "@orchestrator-architect how good are our tests on the payment module, really? Not just coverage — would they catch a real bug?"
