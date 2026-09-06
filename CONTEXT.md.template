@@ -1,0 +1,33 @@
+# CONTEXT.md - [Nome do Projeto / Microsserviço]
+
+> Documento de referência vivo do projeto local. Guia a IA sobre a stack técnica específica, regras de negócio e convenções locais.
+
+## 1. Visão Geral do Produto
+- **Objetivo do Sistema:** [Descreva sucintamente a dor que o software resolve]
+- **Público-Alvo:** [Web / Mobile / API Externa / Dashboard Interno]
+- **Métrica Principal de Negócio:** [Ex: Taxa de Conversão, Latência no Checkout, Engajamento]
+
+## 2. Stack Técnica Detalhada
+- **Backend:** [Ex: Node.js (NestJS) / Python (FastAPI) / Go]
+- **Frontend:** [Ex: React (Vite) / Angular / Next.js]
+- **Banco de Dados Relacional (SQL):** [Ex: PostgreSQL / MySQL]
+- **Banco de Dados Não-Relacional (NoSQL):** [Ex: MongoDB / Redis]
+- **Estilização / UI:** [Ex: Tailwind CSS / Design System Próprio]
+
+## 3. Padrão Arquitetural Local
+Descreva a estrutura de pastas e a separação de camadas do repositório:
+```text
+src/
+├── domain/          # Entidades e Regras de Negócio Puras
+├── application/     # Casos de Uso (Use Cases) e Interfaces/Ports
+└── infrastructure/  # Controllers, Adapters de Banco de Dados e Serviços Externos
+```
+
+## 4. Regras de Persistência e Armazenamento
+- **Database Rules:** [Ex: Uso de UUIDs para IDs, soft-delete para registros de clientes]
+- **Storage Rules:** [Ex: Nenhum arquivo é salvo no disco local do servidor; uso de S3 / MemoryStorage no Multer]
+
+## 5. Scripts de Desenvolvimento e Validação
+- **Rodar a aplicação:** `npm run dev` ou `python main.py`
+- **Executar Testes:** `npm run test`
+- **Executar Linter:** `npm run lint`
