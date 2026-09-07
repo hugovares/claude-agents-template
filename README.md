@@ -56,13 +56,13 @@ The suite follows a **Coordinator/Orchestrator pattern**. Every request first go
                        [product-qa-reviewer]     <-- runs the test suite
                                  │
                                  ▼
-                        [ git diff on screen ]   <-- human approves each versioning step
+                        [ git diff on screen ]   <-- with a drafted commit message
                                  │
                                  ▼
-                      [devops-secops-engineer]   <-- executes branch/commit/push/PR
+                      [ you run it yourself ]    <-- git commit/push/checkout are hard-denied for every agent
 ```
 
-`orchestrator-architect` is the one who asks about each versioning step, since it's the one talking to you — but it never runs `git commit`/`push`/`checkout`/`gh pr create` itself. It drafts the commit message (or PR title/description) and shows it to you alongside the approval question; once you approve, it hands that specific action, and that exact wording, to `devops-secops-engineer` to actually execute — `devops-secops-engineer` doesn't compose its own.
+`orchestrator-architect` never runs `git commit`/`push`/`checkout`/`merge`/`rebase` or `gh pr create`/`pr merge`/`release create` — no agent does, in any invocation form, including a direct `@mention`. These are blocked by a `deny` rule in `.claude/settings.json` that applies regardless of who's asking. What the orchestrator does instead: prepare the diff, a drafted commit message (and branch name, and PR title/description when relevant), and hand you a copy-pasteable block of the exact commands to run in your own terminal.
 
 Only `orchestrator-architect` can invoke other sub-agents (it's the only one with the `Agent` tool, scoped to this exact list). Every other agent works within its own lane and reports back to it.
 
@@ -78,7 +78,7 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 | `frontend-engineer` | 🔵 blue | React/Angular in strict TypeScript, Core Web Vitals, resilient UI states. |
 | `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors; translates a visual reference or a qualitative style brief into an implementable spec. |
 | `data-telemetry-architect` | 🟠 orange | SQL/NoSQL schema design, JSON structured logging, alerting thresholds, LGPD/GDPR compliance — infrastructure-adjacent, same color as `devops-secops-engineer`. |
-| `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, compatibility with the project's existing CI/CD (doesn't create one), local quality-gate hook, release/rollback/feature-flag strategy, **dependency/infra** security, and executing git/PR operations once approved. |
+| `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, compatibility with the project's existing CI/CD (doesn't create one), local quality-gate hook, release/rollback/feature-flag strategy, **dependency/infra** security, and hands-on help resolving git merge/rebase conflicts. |
 | `product-qa-reviewer` | 🟡 yellow | Test suite execution, test-quality audits (incl. mutation testing), anti-over-engineering, Definition of Done. |
 
 There are 10 agents and only 8 supported colors, so two pairs share a color deliberately, grouped by functional proximity rather than arbitrarily: `solutions-architect`/`codebase-cartographer` (both architecture-adjacent — literally split from one original agent) share purple, and `devops-secops-engineer`/`data-telemetry-architect` (both infrastructure/operations, both hold a "CLAUDE.md §7 ask-once" standing decision) share orange. Every other agent keeps a unique color.
@@ -115,16 +115,16 @@ If a change adds a new capability worth remembering, add it as a new scenario th
 
 ## 🛡 Guardrails
 
-Versioning follows a human-in-the-loop flow, enforced on two layers:
+Versioning commands are **hard-denied for every agent**, in every invocation form, with no exception:
 
-1. **Behavioral:** [`CLAUDE.md`](CLAUDE.md) instructs every agent to run `git diff`, present a summary, and explicitly ask you in the conversation before running `git commit`, `git push`, or `git checkout`. Any other infrastructure change stays off-limits autonomously either way — the agent asks you to run those yourself.
-2. **Hard (tool-level):** [`.claude/settings.json`](.claude/settings.json) sets `permissions.ask` on `git commit`, `git push`, `git checkout`, `gh pr create`, `gh pr merge`, and `gh release create` — even after you approve in chat, Claude Code shows its own native confirmation prompt before actually running the command. That prompt is the real safety net: it fires regardless of what an agent decides to do, so approval in conversation is never enough on its own.
+- **`.claude/settings.json`** sets `permissions.deny` on `git commit`, `git push`, `git checkout`, `git merge`, `git rebase`, `gh pr create`, `gh pr merge`, and `gh release create`. A deny rule blocks the command outright, in every permission mode — there's no prompt to click through, because there's nothing to ask: the tool call simply cannot execute.
+- **[`CLAUDE.md`](CLAUDE.md)** reinforces this behaviorally: agents run `git diff` (read-only, always fine), present a summary and a drafted commit message, and hand you the exact commands to run yourself. They don't attempt the denied commands even once.
 
-In short: the agent shows you the diff, asks if it should commit/push/checkout, and only runs the command — with Claude Code's own prompt as the final check — once you say yes. Opening a PR is asked **separately**, after the push, never bundled into the same yes. If you'd rather it never even attempt these commands and you always run them yourself, change `ask` to `deny` for the relevant entries in `settings.json` and revert the "Versioning" rule in `CLAUDE.md`/`orchestrator-architect.md` back to fully manual.
+**Why `deny` instead of `ask`:** earlier versions of this template used `permissions.ask` — the orchestrator would ask for approval in chat, then delegate execution to `devops-secops-engineer`. In real use, this failed more than once: a delegated sub-agent (even one invoked by an explicit `@mention` mid-conversation) runs to completion and returns a single result — it has no way to actually pause and wait for your next chat message, so "ask, then wait, then execute" isn't something a sub-agent can reliably honor no matter how the instruction is worded. Only a hard `deny` closes that gap, because it doesn't depend on any agent choosing correctly — the command is mechanically unreachable. The tradeoff: you now always run `git commit`/`push`/`checkout`/`merge`/`rebase` and `gh pr create`/`pr merge`/`release create` yourself, in your own terminal. If your team is comfortable with the weaker guarantee, `ask` is still a valid choice — just know its limits going in.
 
-### Branching and pull requests
+### Branching, pull requests, and merge conflicts
 
-Before writing code, `orchestrator-architect` proposes a `feature/<slug>` or `fix/<slug>` branch instead of working directly on the current one. After a push, it asks a **separate** question — "want me to open a PR?" — rather than assuming a yes to the push means yes to a PR too. In both cases, and for every other versioning step, the pattern is the same: `orchestrator-architect` is the one who asks (it's the one you're talking to), and `devops-secops-engineer` is the one who actually runs the `git`/`gh` command once you say yes — never the same agent doing both without you in between. `gh pr create` still hits Claude Code's own confirmation prompt on top, regardless of which agent's Bash call triggered it.
+`orchestrator-architect` proposes a `feature/<slug>` or `fix/<slug>` branch and, once code is ready, hands you a copy-pasteable block: the branch command, the commit (with a drafted Conventional Commits message), the push, and — only if you separately ask for a PR — a `gh pr create` with a drafted title/description. You run all of it yourself. If you get stuck on a merge/rebase conflict, `devops-secops-engineer` can help: it reads both sides and edits the conflicting files to resolve the markers, but it doesn't run `git add`/`commit`/`merge`/`rebase` itself either — you finish with the commands it gives you.
 
 ### Model per agent (cost vs. quality)
 
@@ -146,9 +146,9 @@ None of this is a hallucination *detector* — Claude Code doesn't have one. It'
 
 Everything above is either a hard cap on turns or a behavioral rule — an agent is *instructed* to show evidence, but nothing stops it from being wrong in good faith. [Claude Code hooks](https://code.claude.com/docs/en/hooks) close that gap: a hook runs in Claude Code's own runtime, not the model's judgment, and can genuinely block a tool call.
 
-**This template deliberately does not create a CI/CD pipeline.** That's assumed to already exist (or be someone else's job to set up) — scaffolding one wasn't something we wanted this template responsible for. What it does ship (but doesn't activate) is a local convenience: **`.claude/hooks/test-gate.sh`** — a `PreToolUse` hook wired to both `git commit` and `git push`, executing `.claude/hooks/run-tests.sh` (auto-detects `npm test`/`pytest`/`go test`, or hardcode your own command in it), and blocking the command (exit code 2 — Claude cannot talk its way past this) if tests fail. Gating both commit and push, not just commit, means a test failure gets caught even if the hook was only enabled partway through a session. If no test setup is found yet, it passes through rather than blocking everything on a fresh project.
+**This template deliberately does not create a CI/CD pipeline.** That's assumed to already exist (or be someone else's job to set up) — scaffolding one wasn't something we wanted this template responsible for. What it does ship is a local convenience: **`.claude/hooks/test-gate.sh`** — a `PreToolUse` hook that, if wired up, runs before `git commit`/`git push`, executes `.claude/hooks/run-tests.sh` (auto-detects `npm test`/`pytest`/`go test`, or hardcode your own command in it), and blocks the command (exit code 2) if tests fail.
 
-It's not wired up by default, and it's not a substitute for real CI — it just stops this agent's own commits from skipping tests it could have run. `devops-secops-engineer` asks about enabling it **once** — the first time it's relevant — and records the answer (plus where the project's real CI pipeline lives) in `CONTEXT.md` §6, so it's never asked again. Saying validation is already handled externally is a completely valid answer; the agent won't push back or re-ask later.
+With `permissions.deny` on those same commands by default (see the Guardrails section above), **this hook never actually fires for any agent** — the command is already unreachable before a hook would even be consulted. It only matters if you deliberately relax `git commit`/`git push` from `deny` back to `ask` for your project; `devops-secops-engineer` still offers to wire it up once, the first time it's relevant, and records the answer in `CONTEXT.md` §6 — it's a real choice a project might make, so it's still worth asking about.
 
 ### Release, rollback, and alerting
 
@@ -172,7 +172,7 @@ claude-agents-template/
 │   │   ├── frontend-engineer.md
 │   │   ├── ui-ux-design-system.md
 │   │   ├── data-telemetry-architect.md
-│   │   ├── devops-secops-engineer.md    # Also executes git/PR commands once approved
+│   │   ├── devops-secops-engineer.md    # Also helps resolve git merge/rebase conflicts
 │   │   └── product-qa-reviewer.md
 │   ├── hooks/
 │   │   ├── test-gate.sh                  # PreToolUse hook: blocks git commit/push if tests fail (opt-in, local only)

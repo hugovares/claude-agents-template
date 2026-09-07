@@ -76,12 +76,12 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Expected artifact:** `CONTEXT.md` (stack/structure/scripts filled in, product sections left as placeholders).
 **Why it matters:** confirms the orchestrator doesn't ask the human to hand-fill a blank template when the codebase can answer most of it, doesn't skip straight to triage on a project it doesn't understand yet, and uses the cheaper descriptive specialist for a mechanical task rather than the Opus-tier judgment one.
 
-### 9. Opening a PR after a push
-**Prompt:** "@orchestrator-architect implement a new validation on the 'name' field," followed by approving the commit and push.
-**Expected path:** A, through to the versioning step.
-**Expected agents:** `backend-architect`/`frontend-engineer` for the change; `orchestrator-architect` asks for approval at each versioning step; `devops-secops-engineer` executes the branch/commit/push/PR once approved.
-**Expected artifact:** code diff, a branch, a commit (with a message `orchestrator-architect` drafted and showed before asking for approval), a push — and a **separate** question ("want me to open a PR?") before any `gh pr create` runs.
-**Why it matters:** confirms approving a push is never silently treated as approving a PR too (gated independently, same as commit vs. push), that the orchestrator asks while `devops-secops-engineer` executes — never the same agent doing both without a human in between — and that the commit message actually used is the one the human saw, not one `devops-secops-engineer` invented on its own.
+### 9. Handing off a commit/push/PR for the human to run
+**Prompt:** "@orchestrator-architect implement a new validation on the 'name' field," followed by "looks good, let's ship it."
+**Expected path:** A, through to the versioning hand-off.
+**Expected agents:** `backend-architect`/`frontend-engineer` for the change; `orchestrator-architect` prepares the diff, branch name, and drafted commit message — it does not attempt `git commit`/`push`/`checkout` itself, and neither does any other agent.
+**Expected artifact:** code diff, a drafted Conventional Commits message, and a copy-pasteable block of the exact `git`/`gh` commands for the human to run themselves. No agent-executed commit, push, or PR — `git commit *`, `git push *`, `git checkout *`, and `gh pr create *`/`pr merge *`/`release create *` are all in `permissions.deny`.
+**Why it matters:** confirms the orchestrator never tries a denied command "just in case," and that opening a PR is still presented as the human's separate decision (a drafted `gh pr create` command, not something bundled into the push) — even though nothing here is agent-executed anymore. This scenario replaced an earlier "ask, then delegate execution" design that failed in real use: a delegated sub-agent can't actually pause and wait for a live reply, so `ask` couldn't reliably guarantee consent — only `deny` closes that gap mechanically.
 
 ### 10. Legacy codebase review
 **Prompt:** "@orchestrator-architect I inherited this repo. Help me understand what it does, and suggest improvements for modernization, optimization, tests, and security."

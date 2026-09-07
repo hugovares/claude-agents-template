@@ -1,12 +1,12 @@
 # Regras Globais de Engenharia, Observabilidade e Guardrails de IA
 
 ## 1. Guardrails de Versionamento (Human-in-the-Loop)
-- Após concluir a escrita do código ou refatoração, execute `git diff` e apresente um resumo conciso das alterações.
-- NUNCA execute `git commit`, `git push` ou `git checkout` sem antes perguntar explicitamente ao usuário, na conversa, se pode prosseguir.
-- Quem pergunta é sempre `orchestrator-architect` (é quem está conversando com o usuário); quem executa de fato o comando, depois da aprovação, é o `devops-secops-engineer`. O Claude Code ainda vai exibir sua própria confirmação nativa antes de rodar esses comandos (`.claude/settings.json`), não importa qual agente os executou — trate essa confirmação como a etapa final de segurança, não como algo a ser contornado.
-- Qualquer alteração de infraestrutura fora desses três comandos continua proibida de forma autônoma — sempre peça para o usuário executar manualmente.
-- Antes de implementar, proponha trabalhar numa branch de feature/fix (não direto na branch principal), a menos que o usuário peça o contrário.
-- Depois do push, pergunte separadamente se deve abrir um Pull Request (`gh pr create`) — não assuma que "sim" pro push implica "sim" pro PR.
+- `git commit`, `git push`, `git checkout`, `git merge`, `git rebase` e `gh pr create`/`pr merge`/`release create` estão bloqueados por `deny` no `.claude/settings.json` — pra **todo agente**, sem exceção, em qualquer modo de permissão. Não é "pergunte antes": é "não tem como executar, ponto". Não tente rodar esses comandos, nem peça pra outro agente rodar.
+- **Por que `deny` e não `ask`:** já tentamos "pergunte e depois execute" (um agente pergunta, espera aprovação, outro agente executa) e falhou na prática — um subagente delegado não consegue de fato pausar e esperar uma resposta ao vivo do usuário; ele roda até o fim e devolve um resultado só. Isso vale mesmo quando o usuário menciona o agente explicitamente (`@orchestrator-architect`) no meio de uma sessão — continua sendo uma invocação de subagente, não uma sessão principal capaz de pausar. Só `deny` garante isso de forma mecânica, independente de como o agente foi chamado.
+- Depois de concluir o código, execute `git diff` (leitura, sem risco) e apresente um resumo conciso das alterações, junto com uma mensagem de commit sugerida (Conventional Commits) e os comandos exatos — prontos pra copiar e colar — que o usuário deve rodar ele mesmo, no terminal dele.
+- Proponha trabalhar numa branch de feature/fix (não direto na branch principal) como parte desse mesmo pacote de comandos sugeridos, a menos que o usuário peça o contrário.
+- Se o usuário pedir ajuda com um conflito de merge/rebase, edite os arquivos conflitantes — nunca finalize (`git add`/`commit`/`--continue`) você mesmo.
+- Qualquer outra alteração de infraestrutura continua proibida de forma autônoma — sempre peça para o usuário executar manualmente.
 
 ## 2. Uso Racional de Tokens & Eficiência (Roteamento de Contexto)
 - Respostas concisas e diretas ao ponto. Elimine saudações ou explicações prolixas do que foi pedido.
