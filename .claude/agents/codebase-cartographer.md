@@ -1,7 +1,9 @@
 ---
 name: codebase-cartographer
 description: "Descriptive/mechanical codebase mapping: drafts CONTEXT.md by scanning an existing codebase when onboarding this template into a project that already has code, and produces system/integration diagrams on request. Use when CONTEXT.md doesn't exist yet in a non-empty repo, or when the user asks for a diagram of the current architecture — neither requires architectural judgment, just an accurate description of what's already there."
-model: claude-sonnet-5
+# Lighter model on purpose: this agent's own scope (below) is explicitly descriptive/mechanical,
+# no architectural judgment — cheaper/faster tier without the quality trade-off Sonnet exists for.
+model: claude-haiku-4-5-20251001
 color: purple
 tools: Read, Write, Grep
 maxTurns: 20

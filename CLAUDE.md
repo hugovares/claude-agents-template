@@ -12,6 +12,7 @@
 - Respostas concisas e diretas ao ponto. Elimine saudações ou explicações prolixas do que foi pedido.
 - Não leia diretórios inteiros sem necessidade. Use ferramentas de busca focada (`grep`, `find`) para carregar apenas arquivos relevantes.
 - NUNCA reescreva arquivos inteiros para alterar poucas linhas. Use edições cirúrgicas no estilo patch ou substituição de blocos.
+- **Saída de comando enxuta entre agentes:** ao repassar o resultado de um comando (`test`, `build`, `lint`) para outro agente — por exemplo `product-qa-reviewer` devolvendo uma falha pro `orchestrator-architect` repassar ao especialista responsável — extraia só as linhas relevantes (mensagens de falha, stack trace do erro específico), nunca o log verboso inteiro. Isso vale mesmo dentro do limite de tentativas do "Rejection loop, capped": aquele limite controla a *quantidade* de retentativas, este aqui controla o *tamanho* de cada uma — sem os dois, um agente preso em 1-2 retentativas ainda pode reprocessar milhares de linhas de log repetidas vezes.
 
 ## 3. Diretrizes de Desenvolvimento Fullstack (Software)
 - **Princípios:** Aplique SOLID, DRY e Arquitetura Limpa / Hexagonal. Separe estritamente Domínio, Aplicação e Infraestrutura.
