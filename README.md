@@ -100,6 +100,7 @@ Each file's `description` field is written so Claude Code can also route work to
 | Opening a PR after a push | Direct/Analysis, versioning step | (asked separately, after you approve the push) |
 | Legacy codebase review (understand + modernize/optimize/test/security) | Onboarding, then Diagnostic (multi-specialist) | "I inherited this repo — what should we improve?" |
 | Test-quality audit (is test coverage actually meaningful?) | Diagnostic (read-only) | "How good are our tests on the payment module, really?" |
+| Explicit "read-only, don't implement" instruction | Diagnostic (read-only), override is absolute | "Verify the last fix, read-only — don't implement, don't delegate to sub-agents." |
 
 This table is a summary of [`SCENARIOS.md`](SCENARIOS.md), the canonical checklist of behaviors the agent suite must keep covering. It's a **manual regression checklist**, not automated tests — this repo has no application code of its own, so a scenario here only verifies *routing* (which agents get called, in what order), not implementation quality.
 
