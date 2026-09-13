@@ -34,9 +34,10 @@ src/
 - **Executar Linter:** `npm run lint`
 
 ## 6. Quality Gates
-> Preenchido automaticamente por `devops-secops-engineer` na primeira vez que isso for relevante — pergunta uma única vez e nunca mais. Este template não cria pipeline de CI/CD — assume que uma já existe (ou deveria existir) fora daqui.
+> Preenchido automaticamente por `devops-secops-engineer` (CI/CD, hook local) e `orchestrator-architect` (estratégia de branch) na primeira vez que cada um for relevante — pergunta uma única vez e nunca mais. Este template não cria pipeline de CI/CD — assume que uma já existe (ou deveria existir) fora daqui.
 - **Onde vive o pipeline de CI/CD real deste projeto:** [Não registrado ainda — Ex: GitHub Actions em `.github/workflows/ci.yml`, Jenkins, ou "ainda não existe, é uma lacuna conhecida"]
 - **Hook local habilitado (`.claude/hooks/test-gate.sh`, bloqueia commit e push se os testes falharem):** [Não configurado ainda — é uma conveniência local, não substitui o CI acima]
+- **Estratégia de branch para mudanças de código:** [Não registrado ainda — Ex: "sempre feature/fix branch + PR, nunca direto na main", "direto na main para mudanças pequenas, branch para o resto", ou "direto na main sempre (trunk-based)"]
 
 ## 7. Estratégia de Release, Rollback e Feature Flags
 - **Estratégia de deploy:** [Ex: deploy direto na branch main / blue-green / canary]
