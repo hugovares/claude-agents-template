@@ -98,7 +98,7 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Why it matters:** confirms "do we have tests" and "are our tests actually good" are recognized as different questions — high coverage with weak assertions shouldn't read as a pass.
 
 ### 12. Explicit "read-only, don't implement" instruction mid-session
-**Prompt:** "@orchestrator-architect faça uma verificação read-only pós-commit X. Não implemente nada, não delegue implementação pros subagentes — só quero o relatório."
+**Prompt:** "@orchestrator-architect do a read-only check after commit X. Don't implement anything, don't delegate implementation to sub-agents — I just want the report."
 **Expected path:** C — diagnostic (read-only), same as any other diagnostic request, but the override is absolute: no `PLAN.md` created or rewritten, no file touched outside the report itself, no sub-agent invoked with implementation authority — even if the findings look small and obviously worth fixing.
 **Expected agents:** whichever diagnostic specialist(s) actually fit the request's content (per scenarios 6/10/11), and nothing else.
 **Expected artifact:** the diagnostic report only. No `PLAN.md`, no diff, no commit.

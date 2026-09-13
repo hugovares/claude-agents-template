@@ -1,43 +1,44 @@
-# Regras Globais de Engenharia, Observabilidade e Guardrails de IA
+# Global Engineering, Observability, and AI Guardrail Rules
 
-## 1. Guardrails de Versionamento (Human-in-the-Loop)
-- `git commit`, `git push`, `git checkout`, `git merge`, `git rebase` e `gh pr create`/`pr merge`/`release create` estão bloqueados por `deny` no `.claude/settings.json` — pra **todo agente**, sem exceção, em qualquer modo de permissão. Não é "pergunte antes": é "não tem como executar, ponto". Não tente rodar esses comandos, nem peça pra outro agente rodar.
-- **Por que `deny` e não `ask`:** já tentamos "pergunte e depois execute" (um agente pergunta, espera aprovação, outro agente executa) e falhou na prática — um subagente delegado não consegue de fato pausar e esperar uma resposta ao vivo do usuário; ele roda até o fim e devolve um resultado só. Isso vale mesmo quando o usuário menciona o agente explicitamente (`@orchestrator-architect`) no meio de uma sessão — continua sendo uma invocação de subagente, não uma sessão principal capaz de pausar. Só `deny` garante isso de forma mecânica, independente de como o agente foi chamado.
-- Depois de concluir o código, execute `git diff` (leitura, sem risco) e apresente um resumo conciso das alterações, junto com uma mensagem de commit sugerida (Conventional Commits) e os comandos exatos — prontos pra copiar e colar — que o usuário deve rodar ele mesmo, no terminal dele.
-- Estratégia de branch (feature/fix + PR vs. direto na main) é uma decisão permanente de projeto, não uma escolha por request — segue o padrão do §7: pergunte uma única vez, grave a resposta em `CONTEXT.md` §6, e siga essa resposta silenciosamente daí em diante.
-- Se o usuário pedir ajuda com um conflito de merge/rebase, edite os arquivos conflitantes — nunca finalize (`git add`/`commit`/`--continue`) você mesmo.
-- Qualquer outra alteração de infraestrutura continua proibida de forma autônoma — sempre peça para o usuário executar manualmente.
+## 1. Versioning Guardrails (Human-in-the-Loop)
+- `git commit`, `git push`, `git checkout`, `git merge`, `git rebase`, and `gh pr create`/`pr merge`/`release create` are blocked by `deny` in `.claude/settings.json` — for **every agent**, no exceptions, in any permission mode. This isn't "ask first": it's "there's no way to run it, period." Don't attempt these commands, and don't ask another agent to run them either.
+- **Why `deny` and not `ask`:** we already tried "ask, then execute" (one agent asks, waits for approval, another agent executes) and it failed in practice — a delegated sub-agent can't actually pause and wait for a live reply from the user; it runs to completion and returns a single result. This holds even when the user explicitly mentions the agent (`@orchestrator-architect`) mid-session — it's still a sub-agent invocation, not a main session capable of pausing. Only `deny` guarantees this mechanically, regardless of how the agent was invoked.
+- After finishing the code, run `git diff` (read-only, no risk) and present a concise summary of the changes, along with a suggested commit message (Conventional Commits) and the exact commands — ready to copy and paste — that the user should run themselves, in their own terminal.
+- Branch strategy (feature/fix + PR vs. straight to main) is a permanent project decision, not a per-request choice — it follows the §7 pattern: ask once, record the answer in `CONTEXT.md` §6, and follow that answer silently from then on.
+- If the user asks for help with a merge/rebase conflict, edit the conflicting files — never finalize (`git add`/`commit`/`--continue`) it yourself.
+- Any other infrastructure change remains prohibited autonomously — always ask the user to run it manually.
 
-## 2. Uso Racional de Tokens & Eficiência (Roteamento de Contexto)
-- Respostas concisas e diretas ao ponto. Elimine saudações ou explicações prolixas do que foi pedido.
-- Não leia diretórios inteiros sem necessidade. Use ferramentas de busca focada (`grep`, `find`) para carregar apenas arquivos relevantes.
-- NUNCA reescreva arquivos inteiros para alterar poucas linhas. Use edições cirúrgicas no estilo patch ou substituição de blocos.
-- **Saída de comando enxuta entre agentes:** ao repassar o resultado de um comando (`test`, `build`, `lint`) para outro agente — por exemplo `product-qa-reviewer` devolvendo uma falha pro `orchestrator-architect` repassar ao especialista responsável — extraia só as linhas relevantes (mensagens de falha, stack trace do erro específico), nunca o log verboso inteiro. Isso vale mesmo dentro do limite de tentativas do "Rejection loop, capped": aquele limite controla a *quantidade* de retentativas, este aqui controla o *tamanho* de cada uma — sem os dois, um agente preso em 1-2 retentativas ainda pode reprocessar milhares de linhas de log repetidas vezes.
+## 2. Rational Token Use & Efficiency (Context Routing)
+- Concise, to-the-point responses. Skip greetings or verbose explanations of what was asked.
+- **Language:** chat with the user in whatever language they use (e.g. Portuguese) — but every artifact written to disk (code, comments, identifiers, documentation, `CONTEXT.md`, `PLAN.md`, `BACKLOG.md`, `ARCHITECTURE_IMPACT.md`, commit messages, PR descriptions) is always in English, no exceptions. Chat and repository deliberately follow different languages.
+- Don't read entire directories unnecessarily. Use focused search tools (`grep`, `find`) to load only relevant files.
+- NEVER rewrite entire files to change a few lines. Use surgical, patch-style edits or block substitutions.
+- **Lean command output between agents:** when relaying the result of a command (`test`, `build`, `lint`) to another agent — for example `product-qa-reviewer` handing a failure back for `orchestrator-architect` to relay to the responsible specialist — extract only the relevant lines (failure messages, the specific error's stack trace), never the full verbose log. This holds even within the retry cap of "Rejection loop, capped": that cap controls the *number* of retries, this one controls the *size* of each one — without both, an agent stuck in 1-2 retries can still reprocess thousands of log lines repeatedly.
 
-## 3. Diretrizes de Desenvolvimento Fullstack (Software)
-- **Princípios:** Aplique SOLID, DRY e Arquitetura Limpa / Hexagonal. Separe estritamente Domínio, Aplicação e Infraestrutura.
-- **Frontend (React/Angular):** Tipagem estrita em TypeScript (proibido usar `any`). Interfaces mobile-first, acessíveis (WCAG AA) e focadas nos Core Web Vitals.
-- **Backend (Node/Python):** Regras de negócio isoladas dos controllers/frameworks. Consultas de banco otimizadas evitando o problema N+1.
-- **Bancos de Dados (SQL/NoSQL):** Transações atômicas para dados críticos. Consultas paginadas por padrão para preservar memória e tempo de resposta.
+## 3. Fullstack Development Guidelines (Software)
+- **Principles:** Apply SOLID, DRY, and Clean/Hexagonal Architecture. Strictly separate Domain, Application, and Infrastructure.
+- **Frontend (React/Angular):** Strict TypeScript typing (`any` is forbidden). Mobile-first, accessible (WCAG AA) interfaces focused on Core Web Vitals.
+- **Backend (Node/Python):** Business rules isolated from controllers/frameworks. Optimized database queries, avoiding the N+1 problem.
+- **Databases (SQL/NoSQL):** Atomic transactions for critical data. Paginated queries by default to preserve memory and response time.
 
-## 4. Padrão de Observabilidade & Telemetria (Dados)
-- Toda rota pública de API, worker ou manipulador de eventos DEVE emitir logs estruturados em JSON.
-- Todo log deve incluir obrigatoriamente: `timestamp`, `level`, `trace_id` (para correlação), `event_name` e `duration_ms`.
-- NUNCA registre dados sensíveis (PII, senhas, tokens, dados bancários) nos logs da aplicação.
+## 4. Observability & Telemetry Standard (Data)
+- Every public API route, worker, or event handler MUST emit structured JSON logs.
+- Every log must mandatorily include: `timestamp`, `level`, `trace_id` (for correlation), `event_name`, and `duration_ms`.
+- NEVER log sensitive data (PII, passwords, tokens, banking data) in application logs.
 
-## 5. Visão de Produto & Pragmatismo
-- **Regra 80/20 (KISS):** Prefira soluções simples que resolvem a dor do negócio antes de sugerir superengenharia ou microserviços prematuros.
-- Nenhuma feature é considerada concluída (Definition of Done) sem testes automatizados válidos (unitários, integração e, quando a jornada for crítica, E2E) e garantia de zero regressão.
-- Para lógica de negócio crítica (pagamentos, permissões, cálculos financeiros), a suíte de testes deve ser boa o suficiente pra ser validada por teste de mutação, não só ter cobertura de linha — cobertura alta com testes fracos passa despercebida sem isso.
-- Este template não cria nem gerencia pipeline de CI/CD — assume que uma já existe (ou deveria existir) no projeto. O papel dos agentes é garantir que o código novo passa nos testes localmente e é compatível com o que a pipeline já valida, não substituí-la.
+## 5. Product Vision & Pragmatism
+- **80/20 Rule (KISS):** Prefer simple solutions that solve the business pain before suggesting over-engineering or premature microservices.
+- No feature is considered done (Definition of Done) without valid automated tests (unit, integration, and, when the journey is critical, E2E) and a guarantee of zero regression.
+- For critical business logic (payments, permissions, financial calculations), the test suite must be good enough to survive mutation testing, not just have line coverage — high coverage with weak tests goes unnoticed without it.
+- This template does not create or manage a CI/CD pipeline — it assumes one already exists (or should exist) in the project. The agents' role is to ensure new code passes tests locally and is compatible with what the pipeline already validates, not to replace it.
 
-## 6. Evidência Sobre Afirmação (Anti-Alucinação)
-- NUNCA declare que um teste passou, um build funcionou, ou uma migração foi aplicada sem ter executado o comando de verdade e estar relatando a saída real dele. "Deveria funcionar" não é uma verificação.
-- Ao citar um arquivo, função ou comportamento existente, baseie-se no que foi lido/executado nesta sessão — não em suposição de como o código "provavelmente" está.
-- Cada agente tem um limite de `maxTurns` (`.claude/agents/*.md`). Se você atingir esse limite no meio de uma tarefa, sua saída retorna marcada como parcial — isso é esperado e seguro, não tente forçar mais trabalho além do limite para "terminar a qualquer custo".
-- Regra de prompt é reforço comportamental, não garantia técnica. Onde existe um hook configurado (`.claude/hooks/`, ver `CONTEXT.md` §6), ele roda no runtime do Claude Code e pode bloquear a ação de verdade (ex: `git commit`/`git push` com testes falhando) — trate isso como a checagem real, não como algo redundante ou contornável.
+## 6. Evidence Over Assertion (Anti-Hallucination)
+- NEVER state that a test passed, a build worked, or a migration was applied without having actually run the real command and reporting its real output. "Should work" is not a verification.
+- When citing an existing file, function, or behavior, base it on what was actually read/executed in this session — not on an assumption of how the code "probably" is.
+- Every agent has a `maxTurns` cap (`.claude/agents/*.md`). If you hit that cap mid-task, your output comes back marked as partial — that's expected and safe; don't try to force more work past the cap to "finish at any cost."
+- A prompt rule is behavioral reinforcement, not a technical guarantee. Where a hook is configured (`.claude/hooks/`, see `CONTEXT.md` §6), it runs in Claude Code's own runtime and can genuinely block the action (e.g., `git commit`/`git push` with failing tests) — treat that as the real check, not as something redundant or bypassable.
 
-## 7. Decisões Permanentes de Projeto (Pergunte Uma Única Vez)
-- Toda decisão de projeto que não muda de request pra request (onde está a pipeline de CI, se o hook local está habilitado, estratégia de release/rollback/feature flag, estratégia de branch, onde alertas são visualizados e quem é notificado) segue o mesmo padrão: se a seção correspondente do `CONTEXT.md` ainda não tem resposta, pergunte ao usuário **uma única vez**, grave a resposta lá, e nunca mais pergunte.
-- Respeite a resposta mesmo que você, agente, ache que outra escolha seria melhor prática — não é sua decisão insistir.
-- Cada agente que tem uma dessas perguntas sob sua responsabilidade (`orchestrator-architect` para estratégia de branch, `devops-secops-engineer` para CI/hook/release/storage, `backend-architect` para convenções de banco de dados, `data-telemetry-architect` para observabilidade) referencia este princípio em vez de reexplicá-lo.
+## 7. Permanent Project Decisions (Ask Once)
+- Every project decision that doesn't change from request to request (where the CI pipeline lives, whether the local hook is enabled, release/rollback/feature-flag strategy, branch strategy, where alerts are viewed, and who gets notified) follows the same pattern: if the corresponding `CONTEXT.md` section doesn't have an answer yet, ask the user **once**, record the answer there, and never ask again.
+- Honor the answer even if you, the agent, think another choice would be better practice — it's not your call to insist.
+- Every agent that owns one of these questions (`orchestrator-architect` for branch strategy, `devops-secops-engineer` for CI/hook/release/storage, `backend-architect` for database conventions, `data-telemetry-architect` for observability) references this principle instead of re-explaining it.
