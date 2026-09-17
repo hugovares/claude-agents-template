@@ -73,15 +73,18 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 | `orchestrator-architect` | 🔴 red | Triages requests, breaks them into a `PLAN.md`, and delegates to the right specialists in sequence. |
 | `product-analyst` | 🩷 pink | Turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria. |
 | `solutions-architect` | 🟣 purple | Assesses structural/architectural impact before implementation; audits the codebase for architecture/performance/**application-level** security. Runs on `claude-opus-5` — the judgment-heavy half of what used to be one agent (see [Model per agent](#model-per-agent-cost-vs-quality)). |
-| `codebase-cartographer` | 🟣 purple | Descriptive, mechanical codebase mapping: drafts `CONTEXT.md` when onboarding an existing codebase, and produces system diagrams. No judgment calls — that's `solutions-architect`, its architecture-adjacent sibling (same color, on purpose). Runs on `claude-sonnet-5`. |
+| `solutions-architect-deep` | 🟣 purple | Identical to `solutions-architect` — same responsibilities, same rules, reads that file at runtime instead of repeating it — but on `claude-fable-5-1`. Only invoked when the user explicitly asks an audit to go exceptionally deep; never a default. |
+| `codebase-cartographer` | 🟣 purple | Descriptive, mechanical codebase mapping: drafts `CONTEXT.md` when onboarding an existing codebase, and produces system diagrams. No judgment calls — that's `solutions-architect`, its architecture-adjacent sibling (same color, on purpose). Runs on `claude-haiku-4-5` — mechanical description doesn't need Sonnet's cost tier either. |
 | `backend-architect` | 🟢 green | RESTful/GraphQL APIs, Clean Architecture, ACID transactions, OWASP security. |
 | `frontend-engineer` | 🔵 blue | React/Angular in strict TypeScript, Core Web Vitals, resilient UI states. |
 | `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors; translates a visual reference or a qualitative style brief into an implementable spec. |
 | `data-telemetry-architect` | 🟠 orange | SQL/NoSQL schema design, JSON structured logging, alerting thresholds, LGPD/GDPR compliance — infrastructure-adjacent, same color as `devops-secops-engineer`. |
 | `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, compatibility with the project's existing CI/CD (doesn't create one), local quality-gate hook, release/rollback/feature-flag strategy, **dependency/infra** security, and hands-on help resolving git merge/rebase conflicts. |
 | `product-qa-reviewer` | 🟡 yellow | Test suite execution, test-quality audits (incl. mutation testing), anti-over-engineering, Definition of Done. |
+| `deep-research-technologist` | 🩵 cyan | Researches external technology (compares libraries/frameworks, evaluates a migration, verifies a claim about a tool/service) by fetching and citing primary sources — not this codebase's own code, that's `solutions-architect`'s lane. Only invoked when the user explicitly asks for outside research. Runs on `claude-sonnet-5`. |
+| `deep-research-technologist-fable` | 🩵 cyan | Identical to `deep-research-technologist` — reads that file at runtime instead of repeating it — but on `claude-fable-5-1`. Only invoked when the user explicitly asks the research to go exceptionally deep; never a default. |
 
-There are 10 agents and only 8 supported colors, so two pairs share a color deliberately, grouped by functional proximity rather than arbitrarily: `solutions-architect`/`codebase-cartographer` (both architecture-adjacent — literally split from one original agent) share purple, and `devops-secops-engineer`/`data-telemetry-architect` (both infrastructure/operations, both hold a "CLAUDE.md §7 ask-once" standing decision) share orange. Every other agent keeps a unique color.
+There are 13 agents and only 8 supported colors, so several share a color deliberately, grouped by functional proximity rather than arbitrarily: `solutions-architect`/`solutions-architect-deep`/`codebase-cartographer` (all architecture-adjacent — the `-deep` variant literally *is* `solutions-architect`, just on a different model) share purple; `devops-secops-engineer`/`data-telemetry-architect` (both infrastructure/operations, both hold a "CLAUDE.md §7 ask-once" standing decision) share orange; `deep-research-technologist`/`deep-research-technologist-fable`/`ui-ux-design-system` (all turn an ambiguous, qualitative ask — a style brief, a technology question — into something concrete and sourced) share cyan. Every other agent keeps a unique color.
 
 Each file's `description` field is written so Claude Code can also route work to the right specialist automatically, even without going through the orchestrator — see each agent's `.md` file for its full responsibilities and rules.
 
@@ -101,6 +104,8 @@ Each file's `description` field is written so Claude Code can also route work to
 | Legacy codebase review (understand + modernize/optimize/test/security) | Onboarding, then Diagnostic (multi-specialist) | "I inherited this repo — what should we improve?" |
 | Test-quality audit (is test coverage actually meaningful?) | Diagnostic (read-only) | "How good are our tests on the payment module, really?" |
 | Explicit "read-only, don't implement" instruction | Diagnostic (read-only), override is absolute | "Verify the last fix, read-only — don't implement, don't delegate to sub-agents." |
+| External technology research (not this codebase's own code) | Diagnostic (read-only) | "Compare Redis and Memcached for our caching layer." |
+| Explicit "go exceptionally deep" on an audit or research request | Diagnostic (read-only), Fable-tier variant, opt-in only | "I need an extremely thorough, deep audit of our architecture and security." |
 
 This table is a summary of [`SCENARIOS.md`](SCENARIOS.md), the canonical checklist of behaviors the agent suite must keep covering. It's a **manual regression checklist**, not automated tests — this repo has no application code of its own, so a scenario here only verifies *routing* (which agents get called, in what order), not implementation quality.
 
@@ -131,13 +136,15 @@ Branch strategy is a standing decision, not a per-request one: the first time an
 
 All agents default to `claude-sonnet-5` except `solutions-architect`, which uses `claude-opus-5`. The reasoning: `solutions-architect` makes the highest-stakes calls in the suite (a missed architectural risk can slip through silently, since it only escalates to you when *it* judges the impact significant) and is invoked far less often than the tactical agents — so the extra cost applies to a small slice of total usage. `orchestrator-architect` runs on every single request, so bumping its model would multiply cost across all usage for a triage decision Sonnet already handles well; it stays on Sonnet by design, not by oversight.
 
-`solutions-architect` used to also handle onboarding (`CONTEXT.md` drafting) and diagramming — both mechanical, descriptive tasks with no real judgment call, which don't justify Opus pricing. Those moved to a separate agent, `codebase-cartographer`, on `claude-sonnet-5`, precisely so the more expensive model is only paid for the work that actually needs it. A Claude Code subagent has exactly one `model:` per file, so splitting by cost/stakes was the only way to stop paying Opus rates for work that didn't need it — this is also why the two agents' security scopes are split (`solutions-architect` for application/architecture-level security, `devops-secops-engineer` for dependency/infra) rather than one agent owning "security" broadly.
+`solutions-architect` used to also handle onboarding (`CONTEXT.md` drafting) and diagramming — both mechanical, descriptive tasks with no real judgment call, which don't justify Opus pricing. Those moved to a separate agent, `codebase-cartographer`, on `claude-haiku-4-5` (the cheapest tier — no architectural judgment involved at all), precisely so the more expensive model is only paid for the work that actually needs it. A Claude Code subagent has exactly one `model:` per file, so splitting by cost/stakes was the only way to stop paying Opus rates for work that didn't need it — this is also why the two agents' security scopes are split (`solutions-architect` for application/architecture-level security, `devops-secops-engineer` for dependency/infra) rather than one agent owning "security" broadly.
+
+**A fourth tier, `claude-fable-5-1`, exists above Opus** — Anthropic's own guidance positions it for "demanding reasoning and long-horizon agentic work," recommended only once evals on Opus at its highest effort still fall short. It's also the slowest and most expensive tier. Two agents, `solutions-architect-deep` and `deep-research-technologist-fable`, exist purely to put that tier behind an explicit ask: each is a thin file whose only job is to read its base agent's `.md` file at runtime and follow it exactly, so the "deep" variant can never drift out of sync with the agent it mirrors — the two just run on different models. `orchestrator-architect` only ever selects one when the user's own wording asks for exceptional depth (see `SCENARIOS.md` #14-15); it never appears in the automatic diagnostic fan-out. This is deliberate: Fable is built for exactly the kind of multi-hour unattended session the ["batch scope" rule](#runaway-loops-and-unverified-claims) otherwise tries to bound, so it stays rare and opt-in rather than a default upgrade path. There's no per-invocation model override in Claude Code's subagent system today — that's why this needed separate files instead of a parameter.
 
 ### Runaway loops and unverified claims
 
 Two failure modes worth guarding against explicitly: an agent grinding on a task without converging (burning tokens), and an agent asserting something is done/working without having actually checked.
 
-- **`maxTurns` per agent** (in each `.claude/agents/*.md`): caps how many turns a single sub-agent invocation can take. When it's hit, Claude Code returns the output marked as partial instead of erroring, and `orchestrator-architect` is instructed to resume it once with a focused ask — if it's still not done after that, it stops and tells you what's unfinished instead of presenting partial work as complete. Values are a starting point (30 for the implementation-heavy agents, 20-25 for analysis/review agents, 50 for the orchestrator itself, which coordinates everyone else) — tune them once you see real usage. Requires Claude Code v2.1.246+ for the partial-output marking.
+- **`maxTurns` per agent** (in each `.claude/agents/*.md`): caps how many turns a single sub-agent invocation can take. When it's hit, Claude Code returns the output marked as partial instead of erroring, and `orchestrator-architect` is instructed to resume it once with a focused ask — if it's still not done after that, it stops and tells you what's unfinished instead of presenting partial work as complete. Values are a starting point (30 for the implementation-heavy agents, 20-25 for analysis/review agents, 70 for the orchestrator itself, which coordinates everyone else) — tune them once you see real usage. Requires Claude Code v2.1.246+ for the partial-output marking.
 - **Capped rejection loop:** if `product-qa-reviewer` rejects a delivery twice on the same story without resolving it, `orchestrator-architect` stops retrying and escalates to you with a summary of what was tried — instead of cycling indefinitely.
 - **Evidence over assertion** (`CLAUDE.md` §6): no agent may report a test as passing, a build as working, or a migration as applied without having actually run the command and relaying its real output. `product-qa-reviewer` specifically re-runs the test suite itself rather than trusting another agent's summary.
 
@@ -168,19 +175,23 @@ claude-agents-template/
 │   │   ├── orchestrator-architect.md    # Triages requests and delegates via the Agent tool
 │   │   ├── product-analyst.md           # PRD/requirements → BACKLOG.md
 │   │   ├── solutions-architect.md       # Architecture impact assessment → ARCHITECTURE_IMPACT.md
+│   │   ├── solutions-architect-deep.md  # Same agent, Fable-tier — explicit "go deeper" requests only
 │   │   ├── codebase-cartographer.md     # Descriptive mapping: CONTEXT.md onboarding, diagrams
 │   │   ├── backend-architect.md
 │   │   ├── frontend-engineer.md
 │   │   ├── ui-ux-design-system.md
 │   │   ├── data-telemetry-architect.md
 │   │   ├── devops-secops-engineer.md    # Also helps resolve git merge/rebase conflicts
-│   │   └── product-qa-reviewer.md
+│   │   ├── product-qa-reviewer.md
+│   │   ├── deep-research-technologist.md         # External tech research → RESEARCH.md
+│   │   └── deep-research-technologist-fable.md   # Same agent, Fable-tier — explicit "go deeper" requests only
 │   ├── hooks/
 │   │   ├── test-gate.sh                  # PreToolUse hook: blocks git commit/push if tests fail (opt-in, local only)
 │   │   └── run-tests.sh                  # Test-runner the hook calls; auto-detects npm/pytest/go
-│   └── settings.json                    # Permission rules (git/gh commands require confirmation)
+│   └── settings.json                    # Permission rules (git/gh commands hard-denied, not just confirmed)
 ├── scripts/
-│   └── install.sh                       # One-time copy of this template into another project
+│   ├── install.sh                       # One-time copy of this template into another project
+│   └── check-agent-refs.sh              # Grep-based check that agent names stay in sync across files
 ├── CLAUDE.md                            # Global engineering rules and guardrails
 ├── CONTEXT.md.template                  # Per-project context template (stack, architecture, scripts)
 ├── SCENARIOS.md                         # Manual regression checklist for agent routing

@@ -104,6 +104,29 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Expected artifact:** the diagnostic report only. No `PLAN.md`, no diff, no commit.
 **Why it matters:** confirms an explicit inline "don't implement"/"don't delegate" instruction overrides classification outright, rather than being one more signal weighed against how actionable the findings look. This failed once in real use: told exactly this, the orchestrator rewrote `PLAN.md` into a 7-task plan and executed three of its tasks anyway (logging/PII masking, a repository projection change, and a use-case transaction) — uncommitted, but without authorization. Dry-running this scenario after any change to the triage step confirms the override survives.
 
+### 13. External technology research
+**Prompt:** "@orchestrator-architect compare Redis and Memcached for our caching layer — which should we use?"
+**Expected path:** C — diagnostic (read-only), routed to the research specialist rather than the codebase-audit agents.
+**Expected agents:** `deep-research-technologist`.
+**Expected artifact:** a sourced comparison, appended to `RESEARCH.md`. No `PLAN.md`, no diff, no commit.
+**Why it matters:** confirms a request about external technology (not this codebase's own code) gets routed to the research specialist instead of `solutions-architect`, and that findings persist across sessions instead of vanishing after the reply.
+
+### 14. Deep-audit override, explicit only
+**Prompt A (regular):** "@orchestrator-architect what architectural improvements would you recommend for performance and security?" (same as scenario 6).
+**Expected agents A:** `solutions-architect` and `devops-secops-engineer` — never the `-deep` variant, since nothing in the wording asks for exceptional depth.
+**Prompt B (explicit escalation):** "@orchestrator-architect I need an extremely thorough, deep audit of our architecture and security — leave nothing out."
+**Expected agents B:** `solutions-architect-deep` in place of `solutions-architect`, still alongside `devops-secops-engineer`.
+**Expected artifact:** an `ARCHITECTURE_IMPACT.md` entry either way — the deep variant produces a deeper report, not a different kind of artifact.
+**Why it matters:** confirms the Fable-tier variant is never chosen by default, only by the user's own explicit wording, and that a routine version of the same request (A) doesn't silently trigger the slower, more expensive path.
+
+### 15. Deep-research override, explicit only
+**Prompt A (regular):** "@orchestrator-architect what's a good approach for handling idempotency keys in our payment webhook?"
+**Expected agents A:** `deep-research-technologist` — never the `-fable` variant.
+**Prompt B (explicit escalation):** "@orchestrator-architect do a very deep, exhaustive comparison of Kafka vs. Pulsar for our event bus — pesquisa muito profunda."
+**Expected agents B:** `deep-research-technologist-fable` in place of `deep-research-technologist`.
+**Expected artifact:** a `RESEARCH.md` entry either way.
+**Why it matters:** same override discipline as scenario 14, applied to research instead of audits. This one is deliberately narrow: Fable is built for multi-hour unattended sessions, which cuts against the "batch scope" rule `orchestrator-architect` otherwise follows to avoid exhausting the account's session/usage quota — so it stays opt-in, never a default upgrade path.
+
 ---
 
 *This file is the source of truth for "what the agents must be able to handle." The README's summary table is derived from it — update this file first, then reflect changes in the README.*
