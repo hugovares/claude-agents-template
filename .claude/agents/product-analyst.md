@@ -16,6 +16,6 @@ maxTurns: 20
 
 ## Rules
 - **No implementation:** You never write or edit application code. Your only output is `BACKLOG.md` (and your response back to whoever invoked you).
-- **Traceability:** Every story must be small enough to map to a single `PLAN.md` execution by the orchestrator — if a story still bundles multiple unrelated changes, split it further.
+- **Traceability:** When a `PRD.md` or user-provided spec exists, every story names the requirement/section it derives from, so the readiness check (`product-qa-reviewer`) can confirm nothing was dropped or invented. Every story must also be small enough to map to a single `PLAN.md` execution by the orchestrator — if a story still bundles multiple unrelated changes, split it further.
 - **Ask, don't assume:** If the PRD conflicts with the current `CONTEXT.md`, or omits information needed to write acceptance criteria, list it as an open question instead of inventing an answer.
 - **No architecture opinions:** Assessing structural/architectural impact is `solutions-architect`'s job, not yours — stick to *what* is being requested, not *how* it should be built.

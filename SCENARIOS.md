@@ -37,8 +37,8 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 ### 3. PRD / large or ambiguous request
 **Prompt:** "@orchestrator-architect here's the PRD for the referral program (file attached), let's start on this."
 **Expected path:** B — requirements analysis first.
-**Expected agents:** `product-analyst` → `solutions-architect` → (per selected story) the usual implementation agents.
-**Expected artifact:** `BACKLOG.md`, `ARCHITECTURE_IMPACT.md`, then `PLAN.md` per story — and once `product-qa-reviewer` approves that story's delivery, `orchestrator-architect` marks it `Done` in `BACKLOG.md` itself before moving on.
+**Expected agents:** `product-analyst` → `solutions-architect` → `product-qa-reviewer` (readiness check, once for the batch) → (per selected story) the usual implementation agents.
+**Expected artifact:** `BACKLOG.md`, `ARCHITECTURE_IMPACT.md`, a readiness verdict, then `PLAN.md` per story — and once `product-qa-reviewer` approves that story's delivery, `orchestrator-architect` marks it `Done` in `BACKLOG.md` itself before moving on.
 **Why it matters:** confirms a document-shaped or multi-feature request doesn't get treated as a single atomic task, and that `BACKLOG.md` actually gets updated on completion instead of staying frozen at "Not Started" forever.
 
 ### 4. Screen from an image/Figma/Lovable, with backend implications
@@ -126,6 +126,27 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Expected agents B:** `deep-research-technologist-fable` in place of `deep-research-technologist`.
 **Expected artifact:** a `RESEARCH.md` entry either way.
 **Why it matters:** same override discipline as scenario 14, applied to research instead of audits. This one is deliberately narrow: Fable is built for multi-hour unattended sessions, which cuts against the "batch scope" rule `orchestrator-architect` otherwise follows to avoid exhausting the account's session/usage quota — so it stays opt-in, never a default upgrade path.
+
+### 16. New project from scratch (greenfield)
+**Prompt:** "@orchestrator-architect let's build an appointment-booking app for small clinics: patients book slots, clinics manage availability, both get reminders." (run in an empty repository)
+**Expected path:** B — requirements analysis, with a reference architecture instead of an impact assessment.
+**Expected agents:** `product-analyst` → `solutions-architect` (designs `ARCHITECTURE.md`) → **stop for human approval of the design** → `product-qa-reviewer` (readiness check) → the usual implementation agents, in batches.
+**Expected artifact:** `BACKLOG.md`, `ARCHITECTURE.md`, a dated baseline entry in `ARCHITECTURE_IMPACT.md`, a readiness verdict, then `PLAN.md`. No `codebase-cartographer` onboarding — there's no code to describe yet.
+**Why it matters:** confirms an empty repo gets a designed baseline before its first line of code, instead of an impact assessment against nothing — and that the baseline, being significant by definition, always pauses for approval.
+
+### 17. Readiness check fails
+**Prompt:** "@orchestrator-architect here's the PRD for the referral program, start on epic 1." — where `BACKLOG.md` has a story still waiting on an open question from the PRD, and another whose acceptance criterion is "the referral page should be fast."
+**Expected path:** B, stopped at the readiness gate.
+**Expected agents:** `product-qa-reviewer` returns `FAIL` citing both stories → `product-analyst` once to resolve what it can → `product-qa-reviewer` re-runs → if the open question needs a business decision, still `FAIL` → stop and hand the findings to the human.
+**Expected artifact:** the readiness findings and an updated `BACKLOG.md`. No `PLAN.md`, no diff until the gate passes.
+**Why it matters:** confirms the gate actually blocks implementation instead of being a report nobody acts on, and that the fix loop is capped at one round before escalating — the same logic as the capped rejection loop.
+
+### 18. Simple change skips the readiness gate
+**Prompt:** "@orchestrator-architect add a max-length validation to the clinic 'name' field." — in a project that already has `PRD.md`, `ARCHITECTURE.md`, and `BACKLOG.md`.
+**Expected path:** A — direct to implementation.
+**Expected agents:** `backend-architect` and/or `frontend-engineer`, then `product-qa-reviewer` for the usual Definition of Done — **not** a readiness check.
+**Expected artifact:** `PLAN.md`, code diff.
+**Why it matters:** confirms the existence of planning documents doesn't drag every small request through the full analysis path — the gate is proportional to the work, like everything else here.
 
 ---
 
