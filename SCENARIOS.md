@@ -171,6 +171,15 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Expected artifact:** `BACKLOG.md` with explicit open questions.
 **Why it matters:** confirms discovery is a recommendation the user can decline, not a mandatory gate — and that declining it moves the gaps into the open, where the readiness check still catches them.
 
+### 22. Open-ended improvement vs. a stated direction
+**Prompt A:** "@orchestrator-architect the checkout feels clunky, can we improve it?"
+**Expected path A:** Discovery first — recommend `/discovery`; no agents invoked. Nothing says what to change or what outcome to reach.
+**Prompt B:** "@orchestrator-architect the settings page looks dated — give it a more modern, minimal feel."
+**Expected path B:** A — `ui-ux-design-system` first, then `frontend-engineer` (same as scenario 5): a tonal brief is a stated direction, not an open-ended ask.
+**Prompt C:** "@orchestrator-architect reduce the signup form to just email and password."
+**Expected path C:** A — the change itself is named.
+**Why it matters:** confirms the discovery recommendation covers vague improvements to existing areas, not just new products, without swallowing qualitative style briefs (scenario 5) or concrete improvements that merely use the word "improve."
+
 ---
 
 *This file is the source of truth for "what the agents must be able to handle." The README's summary table is derived from it — update this file first, then reflect changes in the README.*
