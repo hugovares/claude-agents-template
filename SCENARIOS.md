@@ -16,6 +16,8 @@ and in what order. Flag any that don't match the "Expected path" column.
 
 Fix any mismatch before committing the prompt change.
 
+**When the change touches triage criteria, also run it blind.** The dry-run above shows the orchestrator the "Expected path" column, and it tends to reconcile its answer toward it — this once reported scenario 2 as a match while a blind run of the same prompt routed it to path B. For a blind run, paste only the scenario prompts (not this file) and ask for the path and agents each one would get, then compare against this file yourself. Include a few prompts that aren't worded like the examples in the agent's instructions, so a pass reflects the criterion generalizing rather than an example being recognized.
+
 This dry-run checks *behavior*. It doesn't catch a purely structural mistake — a renamed agent that some other file still refers to by its old name, or `orchestrator-architect`'s `Agent()` allowlist drifting out of sync with the agents that actually exist. For that, run `./scripts/check-agent-refs.sh` — a boring, deterministic grep-based check, not an agent — alongside the dry-run whenever you rename, add, or remove an agent file.
 
 ## Scenarios
