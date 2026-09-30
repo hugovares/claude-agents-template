@@ -8,7 +8,16 @@
 
 ## 🏛 Architecture
 
-The suite follows a **Coordinator/Orchestrator pattern**. Every request first goes through a triage step in `orchestrator-architect`, which sorts it into one of three paths: straight to implementation, through requirements/architecture analysis first, or — if it's not asking for a code change at all — a read-only diagnostic that never touches the codebase.
+The suite follows a **Coordinator/Orchestrator pattern**. Every request first goes through a triage step in `orchestrator-architect`, which sorts it into one of three paths: straight to implementation, through requirements/architecture analysis first, or — if it's not asking for a code change at all — a read-only diagnostic that never touches the codebase. A product idea too vague to analyze gets sent to the `/discovery` skill first (Step 0).
+
+**Step 0 — Discovery** (optional, for a vague product idea — no brief, PRD, or spec yet):
+
+```text
+[ vague idea ] --> [ /discovery skill, in the main session ]   conversation --> PRODUCT_BRIEF.md
+               --> [ product-analyst: PRD mode ]               writes PRD.md
+                   (always stops: you approve the PRD before any backlog is built)
+               --> continues as path B below, from the approved PRD
+```
 
 **Step 1 — Triage** (`orchestrator-architect` reads the request and picks one path):
 
@@ -74,7 +83,7 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 | Agent | Color | Focus |
 |---|---|---|
 | `orchestrator-architect` | 🔴 red | Triages requests, breaks them into a `PLAN.md`, and delegates to the right specialists in sequence. |
-| `product-analyst` | 🩷 pink | Turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria. |
+| `product-analyst` | 🩷 pink | Writes `PRD.md` from a `PRODUCT_BRIEF.md` (stopping for your approval), and turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria, each traced to a requirement ID. |
 | `solutions-architect` | 🟣 purple | Designs the reference architecture (`ARCHITECTURE.md`) for a new project; assesses structural/architectural impact before implementation; audits the codebase for architecture/performance/**application-level** security. Runs on `claude-opus-5` — the judgment-heavy half of what used to be one agent (see [Model per agent](#model-per-agent-cost-vs-quality)). |
 | `solutions-architect-deep` | 🟣 purple | Identical to `solutions-architect` — same responsibilities, same rules, reads that file at runtime instead of repeating it — but on `claude-fable-5-1`. Only invoked when the user explicitly asks an audit to go exceptionally deep; never a default. |
 | `codebase-cartographer` | 🟣 purple | Descriptive, mechanical codebase mapping: drafts `CONTEXT.md` when onboarding an existing codebase, and produces system diagrams. No judgment calls — that's `solutions-architect`, its architecture-adjacent sibling (same color, on purpose). Runs on `claude-haiku-4-5` — mechanical description doesn't need Sonnet's cost tier either. |
@@ -98,6 +107,7 @@ Each file's `description` field is written so Claude Code can also route work to
 | Simple, scoped change | Direct | "Implement a validation on the 'name' field." |
 | Multi-step feature, still clearly scoped | Direct | "Implement a password reset flow." |
 | PRD / multi-feature spec | Analysis, readiness-gated | "Here's the PRD for the referral program." |
+| Vague product idea (no brief, PRD, or spec) | Discovery (`/discovery` skill), then PRD, then Analysis | "I want to build something to help clinics with no-shows." |
 | New project from scratch (no code yet) | Analysis + reference architecture, readiness-gated | "Let's build an appointment-booking app for clinics." |
 | Screen from an image, Figma, or Lovable | Direct (design-first) | "Implement this screen (image attached)." |
 | Qualitative style change, no reference | Direct (design-first) | "Make screen 'A' feel more executive." |
@@ -189,13 +199,15 @@ claude-agents-template/
 │   │   ├── product-qa-reviewer.md
 │   │   ├── deep-research-technologist.md         # External tech research → RESEARCH.md
 │   │   └── deep-research-technologist-fable.md   # Same agent, Fable-tier — explicit "go deeper" requests only
+│   ├── skills/
+│   │   └── discovery/SKILL.md            # /discovery: product discovery conversation → PRODUCT_BRIEF.md
 │   ├── hooks/
 │   │   ├── test-gate.sh                  # PreToolUse hook: blocks git commit/push if tests fail (opt-in, local only)
 │   │   └── run-tests.sh                  # Test-runner the hook calls; auto-detects npm/pytest/go
 │   └── settings.json                    # Permission rules (git/gh commands hard-denied, not just confirmed)
 ├── scripts/
 │   ├── install.sh                       # One-time copy of this template into another project
-│   └── check-agent-refs.sh              # Grep-based check that agent names stay in sync across files
+│   └── check-agent-refs.sh              # Grep-based check that agent and skill names stay in sync across files
 ├── CLAUDE.md                            # Global engineering rules and guardrails
 ├── CONTEXT.md.template                  # Per-project context template (stack, architecture, scripts)
 ├── SCENARIOS.md                         # Manual regression checklist for agent routing
@@ -275,6 +287,12 @@ Not every request should go straight to implementation. When you hand the orches
 
 `BACKLOG.md` persists across sessions — each time you come back to work on the next story, `product-analyst` updates it rather than starting over. A short, clearly-scoped request (like the password reset example above) skips straight past `product-analyst`/`solutions-architect` — they only add value when there's real ambiguity or structural risk to catch. The readiness check is skipped there too, for the same reason.
 
+### Starting from a vague idea: `/discovery`
+
+When all you have is an idea — "something to help clinics with no-shows" — the orchestrator can't decompose it without inventing the problem, the users, or the first version's scope. It stops and recommends `/discovery` instead. That's a **skill**, not a sub-agent, on purpose: discovery is a conversation, and a sub-agent runs to completion and returns once — it can't actually wait for your answer and follow up on it (the same limitation behind the git guardrails). The skill runs in your main session, one to three questions at a time: problem and people, a divergent round (reframings, alternative solutions, the riskiest assumption), then convergence on an MVP, what's out of scope, measurable success metrics, and constraints. It plays the brief back to you for confirmation, then writes `PRODUCT_BRIEF.md` and stops.
+
+From there, ask the orchestrator to turn the brief into a PRD: `product-analyst` writes `PRD.md` with stable requirement IDs (`FR-1`, `NFR-1`, …), bounded by the brief — out-of-scope stays out, gaps become open questions — and the orchestrator **always stops for your approval of the PRD** before building a backlog from it. Stories in `BACKLOG.md` then cite those IDs, which is what lets the readiness check confirm nothing was dropped or invented. If you already have your own PRD or spec, skip all of this — it plays the same role. And if you'd rather skip discovery on a vague request, just say so: the orchestrator routes it to analysis and the gaps become open questions in the backlog.
+
 ### Starting a new project from scratch
 
 On an empty repository, there's no codebase for an impact assessment to measure against. When the request is to build a new product or system, `solutions-architect` designs a **reference architecture** in `ARCHITECTURE.md` after `product-analyst` writes the backlog: module boundaries, stack choices with the alternatives it rejected, a high-level data model, cross-cutting concerns, and open questions. It defaults to the simplest structure that fits (a modular monolith unless something concrete justifies more), and where a stack choice depends on current outside information it tells you to ask for `deep-research-technologist` instead of answering from memory. The orchestrator always stops for your approval of that design, then the readiness check runs as usual.
@@ -348,7 +366,9 @@ This is the broadest diagnostic case, and it's the one most worth knowing about 
 
 ## 🗂 Traceability
 
-Four files carry the project's working memory, and they're deliberately not treated the same way:
+These files carry the project's working memory, and they're deliberately not treated the same way:
+
+- **`PRODUCT_BRIEF.md`** (from the `/discovery` skill) and **`PRD.md`** (from `product-analyst`) are the product decisions, edited in place. The brief records only what you decided — anything unresolved stays an open question. The PRD's requirement IDs never get renumbered, and changes after your approval get a dated entry in its `## Changelog` section.
 
 - **`BACKLOG.md`** (from `product-analyst`) is persistent — `orchestrator-architect` marks a story `Done` directly once it's delivered, never deleted, so it always reflects the full history of what was planned and delivered.
 - **`ARCHITECTURE_IMPACT.md`** (from `solutions-architect`) is **append-only** — every assessment or audit adds a new dated section (`## YYYY-MM-DD — <title>`) instead of overwriting the last one. This is your architecture decision log: read it to see why a structural call was made, not just what the current state is.

@@ -10,6 +10,8 @@
 #   3. No backtick-wrapped, agent-name-shaped token in the docs fails to
 #      resolve to a real agent file (a short, explicit exceptions list
 #      covers known non-agent tokens like `data-testid`).
+#   4. Each skill's frontmatter `name:` matches its directory name, so
+#      `/<name>` in the docs actually invokes it.
 #
 # Usage: ./scripts/check-agent-refs.sh
 set -uo pipefail
@@ -65,6 +67,21 @@ for token in $mentioned; do
   STALE=1
 done
 [ "$STALE" = 0 ] && echo "OK"
+
+echo
+echo "== 4. Skill frontmatter name vs. directory =="
+SKILL_FAIL=0
+for f in .claude/skills/*/SKILL.md; do
+  [ -e "$f" ] || continue
+  dir=$(basename "$(dirname "$f")")
+  fm_name=$(grep -m1 '^name:' "$f" | sed 's/^name: *//')
+  if [ "$fm_name" != "$dir" ]; then
+    echo "MISMATCH: $f has \`name: $fm_name\` (expected \`$dir\`)"
+    SKILL_FAIL=1
+  fi
+done
+[ "$SKILL_FAIL" = 0 ] && echo "OK"
+[ "$SKILL_FAIL" = 1 ] && FAIL=1
 
 echo
 if [ "$FAIL" = 1 ] || [ "$STALE" = 1 ]; then

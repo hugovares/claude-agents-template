@@ -130,7 +130,7 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 ### 16. New project from scratch (greenfield)
 **Prompt:** "@orchestrator-architect let's build an appointment-booking app for small clinics: patients book slots, clinics manage availability, both get reminders." (run in an empty repository)
 **Expected path:** B — requirements analysis, with a reference architecture instead of an impact assessment.
-**Expected agents:** `product-analyst` → `solutions-architect` (designs `ARCHITECTURE.md`) → **stop for human approval of the design** → `product-qa-reviewer` (readiness check) → the usual implementation agents, in batches.
+**Expected agents:** no discovery recommendation — the prompt names its users and core capabilities, so it's not vague. `product-analyst` → `solutions-architect` (designs `ARCHITECTURE.md`) → **stop for human approval of the design** → `product-qa-reviewer` (readiness check) → the usual implementation agents, in batches.
 **Expected artifact:** `BACKLOG.md`, `ARCHITECTURE.md`, a dated baseline entry in `ARCHITECTURE_IMPACT.md`, a readiness verdict, then `PLAN.md`. No `codebase-cartographer` onboarding — there's no code to describe yet.
 **Why it matters:** confirms an empty repo gets a designed baseline before its first line of code, instead of an impact assessment against nothing — and that the baseline, being significant by definition, always pauses for approval.
 
@@ -147,6 +147,27 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Expected agents:** `backend-architect` and/or `frontend-engineer`, then `product-qa-reviewer` for the usual Definition of Done — **not** a readiness check.
 **Expected artifact:** `PLAN.md`, code diff.
 **Why it matters:** confirms the existence of planning documents doesn't drag every small request through the full analysis path — the gate is proportional to the work, like everything else here.
+
+### 19. Vague product idea
+**Prompt:** "@orchestrator-architect I want to build something to help clinics with no-shows." (no `PRODUCT_BRIEF.md`, `PRD.md`, or spec)
+**Expected path:** Discovery first — the orchestrator stops and recommends running `/discovery`.
+**Expected agents:** none. The orchestrator can't run the skill itself (it's a conversation only the main session can hold) and doesn't call `product-analyst` to guess at a problem, users, or scope.
+**Expected artifact:** a recommendation to run `/discovery`. No `BACKLOG.md`, no `PLAN.md`.
+**Why it matters:** confirms a request with no stated problem, users, or first-version scope gets a real conversation instead of a backlog built on invented requirements.
+
+### 20. Brief exists, no PRD yet
+**Prompt:** "@orchestrator-architect PRODUCT_BRIEF.md is ready — let's move forward." (brief exists, no `PRD.md`)
+**Expected path:** B, starting with PRD mode.
+**Expected agents:** `product-analyst` (PRD mode) → **stop for human approval of `PRD.md`**. Only on a later go-ahead: `product-analyst` (backlog mode) → `solutions-architect` → `product-qa-reviewer` (readiness) → implementation, per scenarios 3/16.
+**Expected artifact:** `PRD.md` with stable requirement IDs, and nothing else in this invocation — no `BACKLOG.md` built from an unapproved PRD.
+**Why it matters:** confirms the PRD is a human sign-off point, and that one agent owning both the PRD and the backlog doesn't collapse them into a single unreviewed step.
+
+### 21. Vague idea, user skips discovery
+**Prompt:** "@orchestrator-architect I want to build something to help clinics with no-shows — skip discovery, go straight to a backlog."
+**Expected path:** B — needs analysis, honoring the explicit skip.
+**Expected agents:** `product-analyst` (backlog mode, with the gaps listed as open questions) → `solutions-architect` → `product-qa-reviewer` (readiness — which should return `FAIL` or `CONCERNS` on the blocking open questions, per scenario 17).
+**Expected artifact:** `BACKLOG.md` with explicit open questions.
+**Why it matters:** confirms discovery is a recommendation the user can decline, not a mandatory gate — and that declining it moves the gaps into the open, where the readiness check still catches them.
 
 ---
 
