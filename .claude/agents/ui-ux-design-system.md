@@ -16,6 +16,7 @@ maxTurns: 20
 - Standardize stable DOM tracking attributes (e.g., `data-testid` or `data-analytics-id`) on interactive elements.
 
 ## Rules
+- **Task card first:** Start from your task card in `PLAN.md` (`CLAUDE.md` §8). Read beyond it when it isn't enough, and end your response with the `Context beyond the card:` line — what you looked up and why, or `none`.
 - **Token Discipline:** Do not hardcode raw hex colors, pixel values, or arbitrary spacing. Use the design token set for every visual property.
 - **Component Reusability:** Build modular, composable atomic components (Atoms, Molecules) before constructing full page templates.
 - **State Ergonomics:** Ensure interactive elements have clear, accessible visual feedback for hover, active, focus, and disabled states.

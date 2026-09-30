@@ -180,6 +180,15 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Expected path C:** A — the change itself is named.
 **Why it matters:** confirms the discovery recommendation covers vague improvements to existing areas, not just new products, without swallowing qualitative style briefs (scenario 5) or concrete improvements that merely use the word "improve."
 
+### 23. Task cards, proportional to the path
+**Prompt A:** "@orchestrator-architect here's the PRD for the referral program, start on epic 1." — readiness has passed; `PRD.md`, `ARCHITECTURE.md`, and `BACKLOG.md` exist.
+**Expected A:** `PLAN.md` with a **full** task card per task: goal, `FR-`/`NFR-` IDs and acceptance criteria, applicable `ARCHITECTURE.md`/`CONTEXT.md` constraints (each with its source), likely files, out of scope, expected tests. Each specialist is pointed at its card and ends with a `Context beyond the card:` line; `product-qa-reviewer` checks the delivery against the card's acceptance criteria.
+**Prompt B:** "@orchestrator-architect implement a new validation on the 'name' field."
+**Expected B:** `PLAN.md` with a **minimal** card — goal, acceptance criterion, likely files — not a restatement of the architecture.
+**Prompt C:** resuming batch 2 of a batched `PLAN.md` in a new session, after `PRD.md` changed one of batch 2's requirements.
+**Expected C:** the orchestrator re-reads the remaining cards' cited sources, refreshes the stale card from the changed PRD, then delegates — it doesn't hand out a card that contradicts its source.
+**Why it matters:** confirms the card carries context in proportion to the work, that it stays tied to its sources, and that gaps in it surface instead of being silently worked around.
+
 ---
 
 *This file is the source of truth for "what the agents must be able to handle." The README's summary table is derived from it — update this file first, then reflect changes in the README.*

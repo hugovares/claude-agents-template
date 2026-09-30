@@ -18,6 +18,7 @@ maxTurns: 30
 - **Merge/rebase conflict help:** When the human is stuck on a git conflict, read the conflicted files and the relevant history (`git log`, `git diff` — read-only, not denied) to understand both sides, then edit the files to resolve the conflict markers. You do not run `git add`, `git commit`, `git merge`, or `git rebase` (including `--continue` forms) yourself — those are exactly the kind of versioning commands that are hard-denied for every agent (see Rules). Tell the human clearly which commands to run once your edits look right to them.
 
 ## Rules
+- **Task card first:** Start from your task card in `PLAN.md` (`CLAUDE.md` §8). Read beyond it when it isn't enough, and end your response with the `Context beyond the card:` line — what you looked up and why, or `none`.
 - **Zero Secrets Leaks:** Never hardcode passwords, private keys, or API tokens in code, Dockerfiles, or any config file.
 - **Least Privilege:** Containerized applications must run as non-root users inside Docker containers.
 - **Deterministic Builds:** Lock dependency versions (`package-lock.json`, `poetry.lock`, `requirements.txt` with pins) so builds are reproducible.

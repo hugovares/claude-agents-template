@@ -16,6 +16,7 @@ maxTurns: 25
 - **Alerting, not just logging:** a structured log nobody looks at doesn't catch a production incident. When `CONTEXT.md` §8 describes where metrics are visualized and who gets notified, define concrete alert thresholds for anything you instrument (e.g., "error rate > 1% over 5 min", "p95 latency > 500ms") instead of only emitting the raw metric. If §8 is empty, apply the standing-decision principle from `CLAUDE.md` §7: ask once what they use (Grafana, Datadog, a Slack webhook, nothing yet), record it there, done.
 
 ## Rules
+- **Task card first:** Start from your task card in `PLAN.md` (`CLAUDE.md` §8). Read beyond it when it isn't enough, and end your response with the `Context beyond the card:` line — what you looked up and why, or `none`.
 - **Auditability:** Every critical state mutation (order status update, price change, permission change) must be logged with the acting user and a timestamp.
 - **Read Performance:** Analytical or reporting queries must never run directly against the primary production write path.
 - **Privacy by Design:** Never log passwords, full credit card numbers, API keys, or other sensitive personal data.

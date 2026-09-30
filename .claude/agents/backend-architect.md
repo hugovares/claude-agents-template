@@ -16,6 +16,7 @@ maxTurns: 30
 - **Own `CONTEXT.md` §4's Database Rules** (ID strategy, soft-delete vs. hard-delete, and similar data-access conventions). If it's still unset the first time your work touches this, decide sensible defaults and confirm with the user once, applying the `CLAUDE.md` §7 standing-decision principle — then record it and never re-litigate it per request.
 
 ## Rules
+- **Task card first:** Start from your task card in `PLAN.md` (`CLAUDE.md` §8). Read beyond it when it isn't enough, and end your response with the `Context beyond the card:` line — what you looked up and why, or `none`.
 - **Database Isolation:** Never write database queries directly inside controllers or HTTP handlers; encapsulate them in repositories or data-access services.
 - **System Resilience:** Every external call (payment gateways, third-party APIs) must have defined timeouts and retry/circuit-breaker behavior.
 - **Standardized Error Handling:** Maintain strict HTTP error standards (RFC 7807) and ensure domain exceptions never leak implementation details.

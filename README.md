@@ -284,7 +284,7 @@ Not every request should go straight to implementation. When you hand the orches
 2. `product-analyst` reads the PRD and writes `BACKLOG.md`: epics broken into user stories, each with acceptance criteria, a rough size (S/M/L), a suggested priority, and any open questions the PRD left unanswered. It asks you to resolve those questions rather than guessing.
 3. For the story you pick to work on next, `solutions-architect` checks whether it forces a structural change (new service, breaking API, schema migration, cross-module ripple) and writes its finding to `ARCHITECTURE_IMPACT.md`. If the impact is significant, it stops and asks for your explicit approval before any code gets written; if it's negligible, it says so and the orchestrator proceeds directly.
 4. Before any code, `product-qa-reviewer` runs a **readiness check** on the batch about to be built: every requirement maps to a story and vice versa, no story contradicts the architecture, no open question is still blocking, and every acceptance criterion is testable. `PASS` proceeds; `CONCERNS` stops to show you the risks; `FAIL` goes back to the owning agent once, and to you if it still fails.
-5. From there, it's the same flow as any other request: `PLAN.md`, delegation to the relevant specialists, `product-qa-reviewer`, and the diff for your approval.
+5. From there, it's the same flow as any other request: `PLAN.md`, delegation to the relevant specialists, `product-qa-reviewer`, and the diff for your approval. On analyzed work, each task in `PLAN.md` is a full **task card** (see the Task cards section below).
 
 `BACKLOG.md` persists across sessions — each time you come back to work on the next story, `product-analyst` updates it rather than starting over. A short, clearly-scoped request (like the password reset example above) skips straight past `product-analyst`/`solutions-architect` — they only add value when there's real ambiguity or structural risk to catch. The readiness check is skipped there too, for the same reason.
 
@@ -365,6 +365,15 @@ and security.
 
 This is the broadest diagnostic case, and it's the one most worth knowing about if you're adopting this template on an existing project: the [onboarding check](#onboarding-an-existing-codebase) has `codebase-cartographer` scan the codebase **once** and draft `CONTEXT.md` first (the "what does it do" part), then the diagnostic fans out to **three** specialists — `solutions-architect` (architecture/modernization/performance/app-security, reading that fresh `CONTEXT.md` as its starting map instead of re-exploring blind), `devops-secops-engineer` (dependency/infra security), and `product-qa-reviewer` (test coverage and quality) — and `orchestrator-architect` merges their findings into one organized report instead of handing you three disconnected ones. The codebase only gets scanned once, not once per agent that needs to understand it.
 
+## 🧾 Task cards
+
+Borrowed from BMAD's self-contained stories: every task in `PLAN.md` is a **card** holding what its specialist needs — goal, requirement IDs and acceptance criteria, the architecture constraints and `CONTEXT.md` decisions that apply, likely files, what's out of scope, and the tests expected. The orchestrator always curated context for each specialist; the card makes that curation visible, so you can see exactly what each agent was given, and it lets a batched plan resume in a new session without rebuilding context. The full rule is in [`CLAUDE.md`](CLAUDE.md) §8. Four safeguards keep it honest:
+
+- **Proportional:** full cards on analyzed work (path B, greenfield), minimal cards (goal, acceptance criterion, likely files) on path A.
+- **Cited, not just copied:** every excerpt names its source, and the source wins if they disagree.
+- **Likely files are a guess** made before anyone explored the code.
+- **A starting point, not a ceiling:** a specialist can read beyond its card, but must say what it looked up (`Context beyond the card:`), so a missing constraint shows up as a card gap instead of being worked around silently. `product-qa-reviewer` then checks the delivery against the card's acceptance criteria.
+
 ## 🗂 Traceability
 
 These files carry the project's working memory, and they're deliberately not treated the same way:
@@ -374,4 +383,4 @@ These files carry the project's working memory, and they're deliberately not tre
 - **`BACKLOG.md`** (from `product-analyst`) is persistent — `orchestrator-architect` marks a story `Done` directly once it's delivered, never deleted, so it always reflects the full history of what was planned and delivered.
 - **`ARCHITECTURE_IMPACT.md`** (from `solutions-architect`) is **append-only** — every assessment or audit adds a new dated section (`## YYYY-MM-DD — <title>`) instead of overwriting the last one. This is your architecture decision log: read it to see why a structural call was made, not just what the current state is.
 - **`ARCHITECTURE.md`** (from `solutions-architect`) is the **living target design** — edited in place so it always shows the current intended architecture, while each change to it gets a dated entry in `ARCHITECTURE_IMPACT.md` explaining why. `CONTEXT.md` §2–3 describe what the code actually is; when the two diverge, `solutions-architect` flags it for you to decide which one is wrong.
-- **`PLAN.md`** (from `orchestrator-architect`) is ephemeral by design — it's a checklist for the task at hand, and gets overwritten by the next request. Its reasoning isn't lost, though: commit it alongside the code diff it produced, and `git log`/`git blame` on `PLAN.md` gives you that history too, tied to the actual commit that resulted from it.
+- **`PLAN.md`** (from `orchestrator-architect`) is a set of task cards (see below), and ephemeral by design — it's a checklist for the task at hand, and gets overwritten by the next request. Its reasoning isn't lost, though: commit it alongside the code diff it produced, and `git log`/`git blame` on `PLAN.md` gives you that history too, tied to the actual commit that resulted from it.
