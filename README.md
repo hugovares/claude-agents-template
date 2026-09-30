@@ -21,7 +21,10 @@ The suite follows a **Coordinator/Orchestrator pattern**. Every request first go
   B) Ambiguous, multi-feature, or a PRD/spec document
      --> [ product-analyst ]        writes/updates BACKLOG.md
      --> [ solutions-architect ]    writes ARCHITECTURE_IMPACT.md
-         (significant impact found? --> stop, ask for human approval)
+         (new project, no code yet? --> designs ARCHITECTURE.md instead)
+         (significant impact / new design? --> stop, ask for human approval)
+     --> [ product-qa-reviewer ]    readiness check on the batch: PASS / CONCERNS / FAIL
+         (CONCERNS or FAIL? --> fix via owner or stop, ask the human)
      --> pick a story, go to Step 2 below.
 
   C) Diagnostic — audit, architectural/security/performance/test-quality
@@ -72,7 +75,7 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 |---|---|---|
 | `orchestrator-architect` | 🔴 red | Triages requests, breaks them into a `PLAN.md`, and delegates to the right specialists in sequence. |
 | `product-analyst` | 🩷 pink | Turns a PRD or ambiguous request into `BACKLOG.md` — epics, user stories, acceptance criteria. |
-| `solutions-architect` | 🟣 purple | Assesses structural/architectural impact before implementation; audits the codebase for architecture/performance/**application-level** security. Runs on `claude-opus-5` — the judgment-heavy half of what used to be one agent (see [Model per agent](#model-per-agent-cost-vs-quality)). |
+| `solutions-architect` | 🟣 purple | Designs the reference architecture (`ARCHITECTURE.md`) for a new project; assesses structural/architectural impact before implementation; audits the codebase for architecture/performance/**application-level** security. Runs on `claude-opus-5` — the judgment-heavy half of what used to be one agent (see [Model per agent](#model-per-agent-cost-vs-quality)). |
 | `solutions-architect-deep` | 🟣 purple | Identical to `solutions-architect` — same responsibilities, same rules, reads that file at runtime instead of repeating it — but on `claude-fable-5-1`. Only invoked when the user explicitly asks an audit to go exceptionally deep; never a default. |
 | `codebase-cartographer` | 🟣 purple | Descriptive, mechanical codebase mapping: drafts `CONTEXT.md` when onboarding an existing codebase, and produces system diagrams. No judgment calls — that's `solutions-architect`, its architecture-adjacent sibling (same color, on purpose). Runs on `claude-haiku-4-5` — mechanical description doesn't need Sonnet's cost tier either. |
 | `backend-architect` | 🟢 green | RESTful/GraphQL APIs, Clean Architecture, ACID transactions, OWASP security. |
@@ -80,7 +83,7 @@ Only `orchestrator-architect` can invoke other sub-agents (it's the only one wit
 | `ui-ux-design-system` | 🩵 cyan | Design tokens, WCAG AA accessibility, stable `data-testid` selectors; translates a visual reference or a qualitative style brief into an implementable spec. |
 | `data-telemetry-architect` | 🟠 orange | SQL/NoSQL schema design, JSON structured logging, alerting thresholds, LGPD/GDPR compliance — infrastructure-adjacent, same color as `devops-secops-engineer`. |
 | `devops-secops-engineer` | 🟠 orange | Multi-stage Docker, compatibility with the project's existing CI/CD (doesn't create one), local quality-gate hook, release/rollback/feature-flag strategy, **dependency/infra** security, and hands-on help resolving git merge/rebase conflicts. |
-| `product-qa-reviewer` | 🟡 yellow | Test suite execution, test-quality audits (incl. mutation testing), anti-over-engineering, Definition of Done. |
+| `product-qa-reviewer` | 🟡 yellow | Readiness check (Definition of Ready) before analyzed work is implemented; test suite execution, test-quality audits (incl. mutation testing), anti-over-engineering, Definition of Done. |
 | `deep-research-technologist` | 🩵 cyan | Researches external technology (compares libraries/frameworks, evaluates a migration, verifies a claim about a tool/service) by fetching and citing primary sources — not this codebase's own code, that's `solutions-architect`'s lane. Only invoked when the user explicitly asks for outside research. Runs on `claude-sonnet-5`. |
 | `deep-research-technologist-fable` | 🩵 cyan | Identical to `deep-research-technologist` — reads that file at runtime instead of repeating it — but on `claude-fable-5-1`. Only invoked when the user explicitly asks the research to go exceptionally deep; never a default. |
 
@@ -94,7 +97,8 @@ Each file's `description` field is written so Claude Code can also route work to
 |---|---|---|
 | Simple, scoped change | Direct | "Implement a validation on the 'name' field." |
 | Multi-step feature, still clearly scoped | Direct | "Implement a password reset flow." |
-| PRD / multi-feature spec | Analysis | "Here's the PRD for the referral program." |
+| PRD / multi-feature spec | Analysis, readiness-gated | "Here's the PRD for the referral program." |
+| New project from scratch (no code yet) | Analysis + reference architecture, readiness-gated | "Let's build an appointment-booking app for clinics." |
 | Screen from an image, Figma, or Lovable | Direct (design-first) | "Implement this screen (image attached)." |
 | Qualitative style change, no reference | Direct (design-first) | "Make screen 'A' feel more executive." |
 | Architecture/performance/security audit | Diagnostic (read-only) | "What architectural improvements would you recommend?" |
@@ -174,7 +178,7 @@ claude-agents-template/
 │   ├── agents/
 │   │   ├── orchestrator-architect.md    # Triages requests and delegates via the Agent tool
 │   │   ├── product-analyst.md           # PRD/requirements → BACKLOG.md
-│   │   ├── solutions-architect.md       # Architecture impact assessment → ARCHITECTURE_IMPACT.md
+│   │   ├── solutions-architect.md       # Reference architecture → ARCHITECTURE.md; impact assessment → ARCHITECTURE_IMPACT.md
 │   │   ├── solutions-architect-deep.md  # Same agent, Fable-tier — explicit "go deeper" requests only
 │   │   ├── codebase-cartographer.md     # Descriptive mapping: CONTEXT.md onboarding, diagrams
 │   │   ├── backend-architect.md
@@ -266,9 +270,14 @@ Not every request should go straight to implementation. When you hand the orches
 1. `orchestrator-architect` triages the request. A PRD like this — multiple features, cross-cutting — triggers the analysis path instead of direct implementation.
 2. `product-analyst` reads the PRD and writes `BACKLOG.md`: epics broken into user stories, each with acceptance criteria, a rough size (S/M/L), a suggested priority, and any open questions the PRD left unanswered. It asks you to resolve those questions rather than guessing.
 3. For the story you pick to work on next, `solutions-architect` checks whether it forces a structural change (new service, breaking API, schema migration, cross-module ripple) and writes its finding to `ARCHITECTURE_IMPACT.md`. If the impact is significant, it stops and asks for your explicit approval before any code gets written; if it's negligible, it says so and the orchestrator proceeds directly.
-4. From there, it's the same flow as any other request: `PLAN.md`, delegation to the relevant specialists, `product-qa-reviewer`, and the diff for your approval.
+4. Before any code, `product-qa-reviewer` runs a **readiness check** on the batch about to be built: every requirement maps to a story and vice versa, no story contradicts the architecture, no open question is still blocking, and every acceptance criterion is testable. `PASS` proceeds; `CONCERNS` stops to show you the risks; `FAIL` goes back to the owning agent once, and to you if it still fails.
+5. From there, it's the same flow as any other request: `PLAN.md`, delegation to the relevant specialists, `product-qa-reviewer`, and the diff for your approval.
 
-`BACKLOG.md` persists across sessions — each time you come back to work on the next story, `product-analyst` updates it rather than starting over. A short, clearly-scoped request (like the password reset example above) skips straight past `product-analyst`/`solutions-architect` — they only add value when there's real ambiguity or structural risk to catch.
+`BACKLOG.md` persists across sessions — each time you come back to work on the next story, `product-analyst` updates it rather than starting over. A short, clearly-scoped request (like the password reset example above) skips straight past `product-analyst`/`solutions-architect` — they only add value when there's real ambiguity or structural risk to catch. The readiness check is skipped there too, for the same reason.
+
+### Starting a new project from scratch
+
+On an empty repository, there's no codebase for an impact assessment to measure against. When the request is to build a new product or system, `solutions-architect` designs a **reference architecture** in `ARCHITECTURE.md` after `product-analyst` writes the backlog: module boundaries, stack choices with the alternatives it rejected, a high-level data model, cross-cutting concerns, and open questions. It defaults to the simplest structure that fits (a modular monolith unless something concrete justifies more), and where a stack choice depends on current outside information it tells you to ask for `deep-research-technologist` instead of answering from memory. The orchestrator always stops for your approval of that design, then the readiness check runs as usual.
 
 ## 🖼 Implementing a Screen from an Image, Figma, or Lovable
 
@@ -339,8 +348,9 @@ This is the broadest diagnostic case, and it's the one most worth knowing about 
 
 ## 🗂 Traceability
 
-Three files carry the project's working memory, and they're deliberately not treated the same way:
+Four files carry the project's working memory, and they're deliberately not treated the same way:
 
 - **`BACKLOG.md`** (from `product-analyst`) is persistent — `orchestrator-architect` marks a story `Done` directly once it's delivered, never deleted, so it always reflects the full history of what was planned and delivered.
 - **`ARCHITECTURE_IMPACT.md`** (from `solutions-architect`) is **append-only** — every assessment or audit adds a new dated section (`## YYYY-MM-DD — <title>`) instead of overwriting the last one. This is your architecture decision log: read it to see why a structural call was made, not just what the current state is.
+- **`ARCHITECTURE.md`** (from `solutions-architect`) is the **living target design** — edited in place so it always shows the current intended architecture, while each change to it gets a dated entry in `ARCHITECTURE_IMPACT.md` explaining why. `CONTEXT.md` §2–3 describe what the code actually is; when the two diverge, `solutions-architect` flags it for you to decide which one is wrong.
 - **`PLAN.md`** (from `orchestrator-architect`) is ephemeral by design — it's a checklist for the task at hand, and gets overwritten by the next request. Its reasoning isn't lost, though: commit it alongside the code diff it produced, and `git log`/`git blame` on `PLAN.md` gives you that history too, tied to the actual commit that resulted from it.
