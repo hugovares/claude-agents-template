@@ -122,8 +122,8 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Why it matters:** confirms the Fable-tier variant is never chosen by default, only by the user's own explicit wording, and that a routine version of the same request (A) doesn't silently trigger the slower, more expensive path.
 
 ### 15. Deep-research override, explicit only
-**Prompt A (regular):** "@orchestrator-architect what's a good approach for handling idempotency keys in our payment webhook?"
-**Expected agents A:** `deep-research-technologist` — never the `-fable` variant.
+**Prompt A (regular):** "@orchestrator-architect research how the major payment providers recommend handling idempotency keys for webhooks — check their official docs."
+**Expected agents A:** `deep-research-technologist` — never the `-fable` variant. (Note: a question about *this codebase's* design, like "what's a good approach for idempotency keys in our payment webhook?", doesn't ask for outside research and correctly routes to `solutions-architect` instead — the research specialist is explicit-only.)
 **Prompt B (explicit escalation):** "@orchestrator-architect do a very deep, exhaustive comparison of Kafka vs. Pulsar for our event bus — pesquisa muito profunda."
 **Expected agents B:** `deep-research-technologist-fable` in place of `deep-research-technologist`.
 **Expected artifact:** a `RESEARCH.md` entry either way.
