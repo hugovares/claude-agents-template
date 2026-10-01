@@ -189,6 +189,13 @@ This dry-run checks *behavior*. It doesn't catch a purely structural mistake —
 **Expected C:** the orchestrator re-reads the remaining cards' cited sources, refreshes the stale card from the changed PRD, then delegates — it doesn't hand out a card that contradicts its source.
 **Why it matters:** confirms the card carries context in proportion to the work, that it stays tied to its sources, and that gaps in it surface instead of being silently worked around.
 
+### 24. Batch splitting is count-based
+**Prompt A:** "@orchestrator-architect implement a password reset flow: generate a token, email it, add a reset screen, log the attempt with trace_id." (same as scenario 2)
+**Expected A:** path A, and `PLAN.md` **split into sequential batches**, announced up front — it has cards for 3+ distinct implementation-capable specialists. Being one cohesive feature is not an exemption. Each batch is a coherent slice: the reset screen's `ui-ux-design-system` and `frontend-engineer` cards land in the same batch, and the logging card stays with the code path it instruments.
+**Prompt B:** "@orchestrator-architect the settings page looks dated — give it a more modern, minimal feel." (same as scenario 22B)
+**Expected B:** one batch — only `ui-ux-design-system` and `frontend-engineer` have cards.
+**Why it matters:** the rule protects the account's session/usage quota, which depends on how many heavy specialists run back-to-back. Earlier wording mixed "independent epics" with "3+ specialists," and blind runs split the same request in some runs and not others.
+
 ---
 
 *This file is the source of truth for "what the agents must be able to handle." The README's summary table is derived from it — update this file first, then reflect changes in the README.*
