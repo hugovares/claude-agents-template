@@ -165,6 +165,15 @@ Two failure modes worth guarding against explicitly: an agent grinding on a task
 
 None of this is a hallucination *detector* — Claude Code doesn't have one. It's a combination of hard caps (`maxTurns`) and behavioral rules that make ungrounded claims and endless loops easier to catch before they reach your `git diff`.
 
+### Why some orchestrator rules exist
+
+`orchestrator-architect.md` is kept as instructions only; the reasons behind its less obvious rules live here, so the model doesn't pay for the history on every request.
+
+- **Read-only override, re-checked before every write:** told to run a read-only post-fix verification and explicitly not to implement or delegate, an earlier version rewrote `PLAN.md` into a multi-task plan and executed three of its tasks anyway (uncommitted, but unauthorized). Unlike the git commands, this can't be blocked mechanically, so the rule is a re-read before every write, not a one-time check (`SCENARIOS.md` #12).
+- **Batches are a count, not a judgment:** every sub-agent call draws on the account's session/usage quota — a fixed-window rate limit, separate from the context window. A run that fans out to several heavy specialists back-to-back can exhaust it mid-flight and leave work half-done and uncommitted, which is worse than pausing on purpose. Blind runs split the same request inconsistently while the rule mixed "independent epics" with "3+ specialists," so it's now purely a count (`SCENARIOS.md` #24).
+- **Outside research and deep variants are explicit-only:** the research and Fable-tier agents are slower and costlier, and Fable is built for exactly the long unattended runs the batch rule bounds. Blind runs showed the orchestrator upgrading ordinary design questions to research on its own judgment, so it now needs the user's wording (`SCENARIOS.md` #15).
+- **Routing triggers live in the orchestrator, not only in agent descriptions:** several blind-run failures (security fan-out, research, screens without a frontend card, logging) came from a condition written in a specialist's own description but missing from the orchestrator, which is the one deciding. Each trigger now has one home: which cards a request needs is in `orchestrator-architect` §4; the card format is in `CLAUDE.md` §8.
+
 ### Mechanical quality gate — local only (opt-in, asked once)
 
 Everything above is either a hard cap on turns or a behavioral rule — an agent is *instructed* to show evidence, but nothing stops it from being wrong in good faith. [Claude Code hooks](https://code.claude.com/docs/en/hooks) close that gap: a hook runs in Claude Code's own runtime, not the model's judgment, and can genuinely block a tool call.
